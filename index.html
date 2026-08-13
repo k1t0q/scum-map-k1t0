@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>SCUM MAP k1t0 v6.6</title>
+<title>SCUM MAP k1t0 v6.9</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090b0e;font-family:Inter,Segoe UI,Arial,sans-serif;color:#fff}
 #stage{position:fixed;left:64px;right:0;top:0;bottom:0;overflow:hidden;background:#090b0e;cursor:grab;touch-action:none;overscroll-behavior:none;transition:left .18s ease}
@@ -301,6 +301,73 @@
     .menu-btn,.zoom button{width:34px;height:34px}
   }
 
+
+  @media (max-width:768px){
+    /* On mobile the map itself has pinch/pan, so desktop zoom controls are unnecessary. */
+    .zoom{display:none!important}
+
+    /* Marker editor becomes a bottom sheet so all fields/actions remain reachable. */
+    .marker-popup{
+      position:fixed!important;
+      left:8px!important;
+      right:8px!important;
+      bottom:8px!important;
+      top:auto!important;
+      width:auto!important;
+      max-width:none!important;
+      max-height:min(78dvh,620px)!important;
+      overflow-y:auto!important;
+      padding:12px!important;
+      border-radius:16px!important;
+      box-sizing:border-box!important;
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+    }
+    .marker-popup h3{font-size:14px;margin-bottom:8px}
+    .marker-popup label{font-size:11px;margin:7px 0 4px}
+    .marker-popup textarea{
+      min-height:82px!important;
+      max-height:150px;
+      resize:none;
+    }
+    .popup-actions{
+      position:sticky;
+      bottom:-12px;
+      z-index:2;
+      margin:10px -12px -12px!important;
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom))!important;
+      background:rgba(8,16,22,.98);
+      border-top:1px solid rgba(255,255,255,.12);
+      display:grid!important;
+      grid-template-columns:1fr 1fr;
+      gap:7px!important;
+    }
+    .popup-actions button{
+      min-height:42px;
+      padding:9px 6px!important;
+      font-size:11px!important;
+    }
+
+    /* With zoom buttons gone, the left rail only needs the hamburger. */
+    .control-rail{width:46px!important}
+    #stage{left:46px!important}
+    .drawer{left:46px!important}
+    .menu-btn{left:5px!important;top:8px!important}
+    #stage.drawer-open{left:min(92vw,296px)!important}
+  }
+
+
+  #stage,#tiles,#sectors,#traders,#markersLayer,#locationMarker{
+    will-change:transform;
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+  }
+  .tile{
+    transform:translateZ(0);
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+  }
+
 </style>
 </head>
 <body>
@@ -416,6 +483,7 @@
       if(mobile){
         cx=keepX; cy=keepY; zoom=keepZoom;
         clampCenter();
+        syncTargets();
         renderTiles();
       }else if(open){
         const home=document.getElementById('home');
@@ -534,7 +602,7 @@
   const CDN='https://cdn.scum-map.com/tiles/scum/island/v50.0.2025.06.17-scum-1.0/regular';
 
   let zoom=1;             // 1 = whole map fitted
-  const MAX_ZOOM=16;
+  const MAX_ZOOM=32;
   let cx=.5, cy=.5;       // normalized map center
   let drag=false,lastX=0,lastY=0;
   let renderRAF=0;
@@ -865,20 +933,34 @@
     deleteMarkerBtn.style.display=existing?'block':'none';
     markerPopup.classList.remove('hidden');
 
-    const rect=mapRect();
-    const sr=stage.getBoundingClientRect();
-    const screenX=sr.left+rect.left+nx*rect.size;
-    const screenY=sr.top+rect.top+ny*rect.size;
-    const px=Math.min(window.innerWidth-330,Math.max(10,screenX+12));
-    const py=Math.min(window.innerHeight-260,Math.max(10,screenY+12));
-    markerPopup.style.left=px+'px';
-    markerPopup.style.top=py+'px';
+    if(!window.matchMedia('(max-width:768px)').matches){
+      const rect=mapRect();
+      const sr=stage.getBoundingClientRect();
+      const screenX=sr.left+rect.left+nx*rect.size;
+      const screenY=sr.top+rect.top+ny*rect.size;
+      const px=Math.min(window.innerWidth-330,Math.max(10,screenX+12));
+      const py=Math.min(window.innerHeight-260,Math.max(10,screenY+12));
+      markerPopup.style.left=px+'px';
+      markerPopup.style.top=py+'px';
+    }else{
+      markerPopup.style.left='';
+      markerPopup.style.top='';
+    }
   }
 
   function closeMarkerPopup(){
     markerPopup.classList.add('hidden');
     editingMarkerId=null;
     pendingMarkerNorm=null;
+  }
+
+
+  if(window.matchMedia('(max-width:768px)').matches){
+    markerPopup.querySelectorAll('input,textarea,select').forEach(el=>{
+      el.addEventListener('focus',()=>{
+        setTimeout(()=>el.scrollIntoView({block:'center',behavior:'smooth'}),180);
+      });
+    });
   }
 
   document.getElementById('saveMarker').addEventListener('click',()=>{
@@ -918,6 +1000,12 @@
     addMarkerMode=!addMarkerMode;
     addMarkerBtn.classList.toggle('active',addMarkerMode);
     addMarkerBtn.textContent=addMarkerMode?'КЛИКНИ ПО КАРТЕ':'＋ ДОБАВИТЬ МЕТКУ';
+
+    if(addMarkerMode && window.matchMedia('(max-width:768px)').matches){
+      // Immediately return the user to the map on mobile.
+      setDrawer(false);
+      showToast('Нажми на карту, чтобы поставить метку');
+    }
   });
 
   stage.addEventListener('click',e=>{
@@ -1212,10 +1300,18 @@
 
   
 
+
   const activePointers=new Map();
   let gestureMode=null;
   let panStart=null;
   let pinchStart=null;
+
+  // Smooth camera target. Input changes targets; RAF eases the real camera toward them.
+  let targetCx=cx, targetCy=cy, targetZoom=zoom;
+  let cameraRAF=0;
+  let velocityX=0, velocityY=0;
+  let lastPointerSample=null;
+  let inertiaRAF=0;
 
   function pointerStagePoint(e){
     const sr=stage.getBoundingClientRect();
@@ -1226,32 +1322,124 @@
     return [...activePointers.values()].filter(p=>p.type==='touch');
   }
 
+  function syncTargets(){
+    targetCx=cx; targetCy=cy; targetZoom=zoom;
+  }
+
+  function clampTarget(){
+    // Temporarily clamp by applying targets to camera, then restore.
+    const ocx=cx, ocy=cy, oz=zoom;
+    cx=targetCx; cy=targetCy; zoom=targetZoom;
+    clampCenter();
+    targetCx=cx; targetCy=cy; targetZoom=zoom;
+    cx=ocx; cy=ocy; zoom=oz;
+  }
+
+  function animateCamera(){
+    cameraRAF=0;
+
+    const zoomDiff=targetZoom-zoom;
+    const xDiff=targetCx-cx;
+    const yDiff=targetCy-cy;
+
+    // Fast but smooth response. Slightly stronger on desktop, buttery on touch.
+    const ease=gestureMode==='pinch' ? 0.42 : 0.34;
+
+    zoom += zoomDiff*ease;
+    cx += xDiff*ease;
+    cy += yDiff*ease;
+
+    if(Math.abs(zoomDiff)<0.00025) zoom=targetZoom;
+    if(Math.abs(xDiff)<0.000002) cx=targetCx;
+    if(Math.abs(yDiff)<0.000002) cy=targetCy;
+
+    clampCenter();
+    schedule();
+
+    if(
+      Math.abs(targetZoom-zoom)>0.00025 ||
+      Math.abs(targetCx-cx)>0.000002 ||
+      Math.abs(targetCy-cy)>0.000002
+    ){
+      cameraRAF=requestAnimationFrame(animateCamera);
+    }
+  }
+
+  function requestCamera(){
+    if(!cameraRAF) cameraRAF=requestAnimationFrame(animateCamera);
+  }
+
+  function stopInertia(){
+    if(inertiaRAF){
+      cancelAnimationFrame(inertiaRAF);
+      inertiaRAF=0;
+    }
+  }
+
+  function startInertia(){
+    stopInertia();
+    if(Math.hypot(velocityX,velocityY)<0.000025) return;
+
+    let prev=performance.now();
+    const tick=(now)=>{
+      const dt=Math.min(32,now-prev)/16.667;
+      prev=now;
+
+      targetCx += velocityX*dt;
+      targetCy += velocityY*dt;
+      clampTarget();
+      requestCamera();
+
+      // Natural glide with quick enough stopping for precise map work.
+      velocityX *= Math.pow(0.88,dt);
+      velocityY *= Math.pow(0.88,dt);
+
+      if(Math.hypot(velocityX,velocityY)>0.000012){
+        inertiaRAF=requestAnimationFrame(tick);
+      }else{
+        inertiaRAF=0;
+      }
+    };
+    inertiaRAF=requestAnimationFrame(tick);
+  }
+
   function beginPinch(){
     const pts=currentTouchPoints();
     if(pts.length<2) return;
+    stopInertia();
+
     const a=pts[0],b=pts[1];
     const midX=(a.x+b.x)/2;
     const midY=(a.y+b.y)/2;
     const dist=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));
+
+    // Use the target camera so pinch never fights the easing camera.
+    const oldCx=cx,oldCy=cy,oldZoom=zoom;
+    cx=targetCx;cy=targetCy;zoom=targetZoom;
     const rect=mapRect();
+    cx=oldCx;cy=oldCy;zoom=oldZoom;
+
     pinchStart={
       dist,
-      zoom,
+      zoom:targetZoom,
       nx:(midX-rect.left)/rect.size,
       ny:(midY-rect.top)/rect.size
     };
+
     gestureMode='pinch';
     panStart=null;
+    velocityX=velocityY=0;
     stage.classList.add('drag');
   }
 
   stage.addEventListener('pointerdown',e=>{
-    // Ignore non-primary mouse buttons.
     if(e.pointerType==='mouse' && e.button!==0) return;
+
+    stopInertia();
+    syncTargets();
 
     const p=pointerStagePoint(e);
     activePointers.set(e.pointerId,{x:p.x,y:p.y,type:e.pointerType});
-
     try{stage.setPointerCapture(e.pointerId)}catch{}
 
     if(e.pointerType==='touch'){
@@ -1260,7 +1448,8 @@
         beginPinch();
       }else{
         gestureMode='pan';
-        panStart={x:p.x,y:p.y,cx,cy};
+        panStart={x:p.x,y:p.y,cx:targetCx,cy:targetCy};
+        lastPointerSample={x:p.x,y:p.y,t:performance.now()};
         stage.classList.add('drag');
       }
       e.preventDefault();
@@ -1268,7 +1457,8 @@
     }
 
     gestureMode='pan';
-    panStart={x:p.x,y:p.y,cx,cy};
+    panStart={x:p.x,y:p.y,cx:targetCx,cy:targetCy};
+    lastPointerSample={x:p.x,y:p.y,t:performance.now()};
     stage.classList.add('drag');
   });
 
@@ -1290,16 +1480,14 @@
         const midY=(a.y+b.y)/2;
         const dist=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));
 
-        const newZoom=Math.max(1,Math.min(MAX_ZOOM,pinchStart.zoom*(dist/pinchStart.dist)));
-        zoom=newZoom;
+        targetZoom=Math.max(1,Math.min(MAX_ZOOM,pinchStart.zoom*(dist/pinchStart.dist)));
 
-        // Keep the exact map point between both fingers under the moving midpoint.
-        const newSize=fitSize()*zoom;
-        cx=pinchStart.nx-(midX-stage.clientWidth/2)/newSize;
-        cy=pinchStart.ny-(midY-stage.clientHeight/2)/newSize;
+        const newSize=fitSize()*targetZoom;
+        targetCx=pinchStart.nx-(midX-stage.clientWidth/2)/newSize;
+        targetCy=pinchStart.ny-(midY-stage.clientHeight/2)/newSize;
 
-        clampCenter();
-        schedule();
+        clampTarget();
+        requestCamera();
         e.preventDefault();
         return;
       }
@@ -1308,24 +1496,44 @@
         const only=pts[0];
         if(gestureMode!=='pan' || !panStart){
           gestureMode='pan';
-          panStart={x:only.x,y:only.y,cx,cy};
+          panStart={x:only.x,y:only.y,cx:targetCx,cy:targetCy};
+          lastPointerSample={x:only.x,y:only.y,t:performance.now()};
         }
-        const size=fitSize()*zoom;
-        cx=panStart.cx-(only.x-panStart.x)/size;
-        cy=panStart.cy-(only.y-panStart.y)/size;
-        clampCenter();
-        schedule();
+
+        const size=fitSize()*targetZoom;
+        targetCx=panStart.cx-(only.x-panStart.x)/size;
+        targetCy=panStart.cy-(only.y-panStart.y)/size;
+        clampTarget();
+
+        const now=performance.now();
+        if(lastPointerSample){
+          const dt=Math.max(8,now-lastPointerSample.t);
+          velocityX=-(only.x-lastPointerSample.x)/size*(16.667/dt);
+          velocityY=-(only.y-lastPointerSample.y)/size*(16.667/dt);
+        }
+        lastPointerSample={x:only.x,y:only.y,t:now};
+
+        requestCamera();
         e.preventDefault();
       }
       return;
     }
 
     if(gestureMode==='pan' && panStart){
-      const size=fitSize()*zoom;
-      cx=panStart.cx-(p.x-panStart.x)/size;
-      cy=panStart.cy-(p.y-panStart.y)/size;
-      clampCenter();
-      schedule();
+      const size=fitSize()*targetZoom;
+      targetCx=panStart.cx-(p.x-panStart.x)/size;
+      targetCy=panStart.cy-(p.y-panStart.y)/size;
+      clampTarget();
+
+      const now=performance.now();
+      if(lastPointerSample){
+        const dt=Math.max(8,now-lastPointerSample.t);
+        velocityX=-(p.x-lastPointerSample.x)/size*(16.667/dt);
+        velocityY=-(p.y-lastPointerSample.y)/size*(16.667/dt);
+      }
+      lastPointerSample={x:p.x,y:p.y,t:now};
+
+      requestCamera();
     }
   });
 
@@ -1338,22 +1546,26 @@
       const pts=currentTouchPoints();
       if(pts.length>=2){
         beginPinch();
-      }else if(pts.length===1){
+        return;
+      }
+      if(pts.length===1){
         const only=pts[0];
         gestureMode='pan';
-        panStart={x:only.x,y:only.y,cx,cy};
+        panStart={x:only.x,y:only.y,cx:targetCx,cy:targetCy};
         pinchStart=null;
-      }else{
-        gestureMode=null;
-        panStart=null;
-        pinchStart=null;
-        stage.classList.remove('drag');
+        lastPointerSample={x:only.x,y:only.y,t:performance.now()};
+        return;
       }
-    }else{
-      gestureMode=null;
-      panStart=null;
-      stage.classList.remove('drag');
     }
+
+    const wasPan=gestureMode==='pan';
+    gestureMode=null;
+    panStart=null;
+    pinchStart=null;
+    lastPointerSample=null;
+    stage.classList.remove('drag');
+
+    if(wasPan) startInertia();
   }
 
   stage.addEventListener('pointerup',finishPointer);
@@ -1362,13 +1574,30 @@
   stage.addEventListener('wheel',e=>{
     e.preventDefault();
     mapContext.classList.remove('show');
+    stopInertia();
 
+    // Keep current target camera as the basis for consecutive wheel events.
     const sr=stage.getBoundingClientRect();
     const sx=e.clientX-sr.left;
     const sy=e.clientY-sr.top;
 
-    const factor=e.deltaY<0 ? 1.18 : 1/1.18;
-    zoomAt(factor,sx,sy);
+    const oldCx=cx,oldCy=cy,oldZoom=zoom;
+    cx=targetCx;cy=targetCy;zoom=targetZoom;
+    const rect=mapRect();
+    cx=oldCx;cy=oldCy;zoom=oldZoom;
+
+    const nx=(sx-rect.left)/rect.size;
+    const ny=(sy-rect.top)/rect.size;
+
+    const factor=e.deltaY<0 ? 1.16 : 1/1.16;
+    targetZoom=Math.max(1,Math.min(MAX_ZOOM,targetZoom*factor));
+
+    const newSize=fitSize()*targetZoom;
+    targetCx=nx-(sx-stage.clientWidth/2)/newSize;
+    targetCy=ny-(sy-stage.clientHeight/2)/newSize;
+
+    clampTarget();
+    requestCamera();
   },{passive:false});
 
 
