@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>SCUM MAP k1t0 v6.5</title>
+<title>SCUM MAP k1t0 v6.6</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090b0e;font-family:Inter,Segoe UI,Arial,sans-serif;color:#fff}
-#stage{position:fixed;left:64px;right:0;top:0;bottom:0;overflow:hidden;background:#090b0e;cursor:grab;touch-action:none;transition:left .18s ease}
+#stage{position:fixed;left:64px;right:0;top:0;bottom:0;overflow:hidden;background:#090b0e;cursor:grab;touch-action:none;overscroll-behavior:none;transition:left .18s ease}
 
 #stage.drawer-open{left:394px}
 #stage.drag{cursor:grabbing}
@@ -1211,91 +1211,153 @@
   }
 
   
-  let touchMode=null;
-  let touchStart=null;
+
+  const activePointers=new Map();
+  let gestureMode=null;
+  let panStart=null;
   let pinchStart=null;
 
-  function stagePointFromTouch(t){
+  function pointerStagePoint(e){
     const sr=stage.getBoundingClientRect();
-    return {x:t.clientX-sr.left,y:t.clientY-sr.top};
+    return {x:e.clientX-sr.left,y:e.clientY-sr.top};
   }
 
-  stage.addEventListener('touchstart',e=>{
-    if(e.touches.length===1){
-      const p=stagePointFromTouch(e.touches[0]);
-      touchMode='pan';
-      touchStart={x:p.x,y:p.y,cx,cy};
-      stage.classList.add('drag');
-      e.preventDefault();
-    }else if(e.touches.length===2){
-      const p1=stagePointFromTouch(e.touches[0]);
-      const p2=stagePointFromTouch(e.touches[1]);
-      const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
-      const dist=Math.hypot(p2.x-p1.x,p2.y-p1.y);
-      const rect=mapRect();
-      const nx=(mx-rect.left)/rect.size;
-      const ny=(my-rect.top)/rect.size;
-      pinchStart={dist,zoom,nx,ny,mx,my};
-      touchMode='pinch';
-      e.preventDefault();
-    }
-  },{passive:false});
+  function currentTouchPoints(){
+    return [...activePointers.values()].filter(p=>p.type==='touch');
+  }
 
-  stage.addEventListener('touchmove',e=>{
-    if(touchMode==='pan' && e.touches.length===1 && touchStart){
-      const p=stagePointFromTouch(e.touches[0]);
-      const rect=mapRect();
-      const dx=p.x-touchStart.x;
-      const dy=p.y-touchStart.y;
-      // Convert pixel motion into normalized map center motion.
-      cx=touchStart.cx-dx/rect.size;
-      cy=touchStart.cy-dy/rect.size;
+  function beginPinch(){
+    const pts=currentTouchPoints();
+    if(pts.length<2) return;
+    const a=pts[0],b=pts[1];
+    const midX=(a.x+b.x)/2;
+    const midY=(a.y+b.y)/2;
+    const dist=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));
+    const rect=mapRect();
+    pinchStart={
+      dist,
+      zoom,
+      nx:(midX-rect.left)/rect.size,
+      ny:(midY-rect.top)/rect.size
+    };
+    gestureMode='pinch';
+    panStart=null;
+    stage.classList.add('drag');
+  }
+
+  stage.addEventListener('pointerdown',e=>{
+    // Ignore non-primary mouse buttons.
+    if(e.pointerType==='mouse' && e.button!==0) return;
+
+    const p=pointerStagePoint(e);
+    activePointers.set(e.pointerId,{x:p.x,y:p.y,type:e.pointerType});
+
+    try{stage.setPointerCapture(e.pointerId)}catch{}
+
+    if(e.pointerType==='touch'){
+      const pts=currentTouchPoints();
+      if(pts.length>=2){
+        beginPinch();
+      }else{
+        gestureMode='pan';
+        panStart={x:p.x,y:p.y,cx,cy};
+        stage.classList.add('drag');
+      }
+      e.preventDefault();
+      return;
+    }
+
+    gestureMode='pan';
+    panStart={x:p.x,y:p.y,cx,cy};
+    stage.classList.add('drag');
+  });
+
+  stage.addEventListener('pointermove',e=>{
+    if(!activePointers.has(e.pointerId)) return;
+
+    const p=pointerStagePoint(e);
+    const prev=activePointers.get(e.pointerId);
+    activePointers.set(e.pointerId,{x:p.x,y:p.y,type:prev.type});
+
+    if(prev.type==='touch'){
+      const pts=currentTouchPoints();
+
+      if(pts.length>=2){
+        if(gestureMode!=='pinch' || !pinchStart) beginPinch();
+
+        const a=pts[0],b=pts[1];
+        const midX=(a.x+b.x)/2;
+        const midY=(a.y+b.y)/2;
+        const dist=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));
+
+        const newZoom=Math.max(1,Math.min(MAX_ZOOM,pinchStart.zoom*(dist/pinchStart.dist)));
+        zoom=newZoom;
+
+        // Keep the exact map point between both fingers under the moving midpoint.
+        const newSize=fitSize()*zoom;
+        cx=pinchStart.nx-(midX-stage.clientWidth/2)/newSize;
+        cy=pinchStart.ny-(midY-stage.clientHeight/2)/newSize;
+
+        clampCenter();
+        schedule();
+        e.preventDefault();
+        return;
+      }
+
+      if(pts.length===1){
+        const only=pts[0];
+        if(gestureMode!=='pan' || !panStart){
+          gestureMode='pan';
+          panStart={x:only.x,y:only.y,cx,cy};
+        }
+        const size=fitSize()*zoom;
+        cx=panStart.cx-(only.x-panStart.x)/size;
+        cy=panStart.cy-(only.y-panStart.y)/size;
+        clampCenter();
+        schedule();
+        e.preventDefault();
+      }
+      return;
+    }
+
+    if(gestureMode==='pan' && panStart){
+      const size=fitSize()*zoom;
+      cx=panStart.cx-(p.x-panStart.x)/size;
+      cy=panStart.cy-(p.y-panStart.y)/size;
       clampCenter();
       schedule();
-      e.preventDefault();
-    }else if(touchMode==='pinch' && e.touches.length===2 && pinchStart){
-      const p1=stagePointFromTouch(e.touches[0]);
-      const p2=stagePointFromTouch(e.touches[1]);
-      const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
-      const dist=Math.max(1,Math.hypot(p2.x-p1.x,p2.y-p1.y));
-      const targetZoom=Math.max(1,Math.min(16,pinchStart.zoom*(dist/pinchStart.dist)));
-
-      // Keep the map point under the pinch midpoint stable.
-      zoom=targetZoom;
-      const sr=stage.getBoundingClientRect();
-      const newSize=baseSize*zoom;
-      const targetLeft=mx-pinchStart.nx*newSize;
-      const targetTop=my-pinchStart.ny*newSize;
-      const stageCenterX=stage.clientWidth/2;
-      const stageCenterY=stage.clientHeight/2;
-      cx=.5-(targetLeft-(stageCenterX-newSize/2))/newSize;
-      cy=.5-(targetTop-(stageCenterY-newSize/2))/newSize;
-      clampCenter();
-      schedule();
-      e.preventDefault();
     }
-  },{passive:false});
+  });
 
-  stage.addEventListener('touchend',e=>{
-    if(e.touches.length===0){
-      touchMode=null;
-      touchStart=null;
-      pinchStart=null;
+  function finishPointer(e){
+    const wasTouch=activePointers.get(e.pointerId)?.type==='touch';
+    activePointers.delete(e.pointerId);
+    try{stage.releasePointerCapture(e.pointerId)}catch{}
+
+    if(wasTouch){
+      const pts=currentTouchPoints();
+      if(pts.length>=2){
+        beginPinch();
+      }else if(pts.length===1){
+        const only=pts[0];
+        gestureMode='pan';
+        panStart={x:only.x,y:only.y,cx,cy};
+        pinchStart=null;
+      }else{
+        gestureMode=null;
+        panStart=null;
+        pinchStart=null;
+        stage.classList.remove('drag');
+      }
+    }else{
+      gestureMode=null;
+      panStart=null;
       stage.classList.remove('drag');
-    }else if(e.touches.length===1){
-      const p=stagePointFromTouch(e.touches[0]);
-      touchMode='pan';
-      touchStart={x:p.x,y:p.y,cx,cy};
-      pinchStart=null;
     }
-  },{passive:false});
+  }
 
-  stage.addEventListener('touchcancel',()=>{
-    touchMode=null;
-    touchStart=null;
-    pinchStart=null;
-    stage.classList.remove('drag');
-  },{passive:false});
+  stage.addEventListener('pointerup',finishPointer);
+  stage.addEventListener('pointercancel',finishPointer);
 
   stage.addEventListener('wheel',e=>{
     e.preventDefault();
@@ -1309,16 +1371,7 @@
     zoomAt(factor,sx,sy);
   },{passive:false});
 
-  stage.addEventListener('pointerdown',e=>{
-    if(e.button!==0)return;drag=true;lastX=e.clientX;lastY=e.clientY;stage.classList.add('drag');stage.setPointerCapture(e.pointerId);
-  });
-  stage.addEventListener('pointermove',e=>{
-    if(!drag)return;
-    const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;
-    const size=fitSize()*zoom;cx-=dx/size;cy-=dy/size;clampCenter();schedule();
-  });
-  function stopDrag(e){drag=false;stage.classList.remove('drag');try{stage.releasePointerCapture(e.pointerId)}catch{}}
-  stage.addEventListener('pointerup',stopDrag);stage.addEventListener('pointercancel',stopDrag);
+
 
   document.getElementById('plus').addEventListener('click',()=>zoomAt(1.45,stage.clientWidth/2,stage.clientHeight/2));
   document.getElementById('minus').addEventListener('click',()=>zoomAt(1/1.45,stage.clientWidth/2,stage.clientHeight/2));
