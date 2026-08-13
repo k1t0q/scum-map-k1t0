@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>SCUM MAP k1t0 v6.4</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>SCUM MAP k1t0 v6.5</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090b0e;font-family:Inter,Segoe UI,Arial,sans-serif;color:#fff}
 #stage{position:fixed;left:64px;right:0;top:0;bottom:0;overflow:hidden;background:#090b0e;cursor:grab;touch-action:none;transition:left .18s ease}
@@ -229,6 +229,78 @@
   .std-marker.brenor .std-label{border-color:rgba(190,130,255,.45)}
   .std-marker.killboxes .std-label{border-color:rgba(57,207,208,.70)}
 
+
+  @media (max-width: 768px){
+    html,body{overscroll-behavior:none}
+    body{touch-action:none}
+    .control-rail{
+      width:48px;
+      background:rgba(8,11,14,.96);
+      border-right:1px solid rgba(255,255,255,.10)
+    }
+    #stage{left:48px}
+    #stage.drawer-open{left:min(88vw,308px)}
+    .drawer{
+      left:48px;
+      width:min(260px,calc(88vw - 48px));
+      padding:18px 10px 14px;
+      font-size:12px
+    }
+    .menu-btn{
+      left:6px;top:8px;width:36px;height:36px;border-radius:9px;font-size:18px
+    }
+    .zoom{
+      left:6px;top:50%;gap:5px
+    }
+    .zoom button{
+      width:36px;height:36px;border-radius:9px;font-size:18px
+    }
+    .drawer-title{font-size:15px;margin-bottom:10px}
+    .drawer-head{font-size:11px;padding:4px 0 7px}
+    .filter-row{font-size:11px;padding:5px 0;gap:6px}
+    .filter-row input{transform:scale(.9)}
+    .filter-head{font-size:10px}
+    .profile-select{padding:7px 8px;font-size:11px}
+    .profile-btn{padding:7px 8px;font-size:11px}
+    .add-marker-btn{padding:8px;font-size:11px}
+    .location-row{gap:5px}
+    .location-input{padding:8px 9px;font-size:11px}
+    .location-btn{padding:8px 9px;font-size:10px}
+    .location-hint{font-size:9px}
+    .marker-popup{
+      width:min(88vw,300px);
+      max-height:72vh;
+      overflow:auto;
+      padding:10px
+    }
+    .marker-popup input,.marker-popup select,.marker-popup textarea{
+      font-size:12px;padding:8px
+    }
+    .popup-actions button{padding:8px;font-size:11px}
+    .std-dot{min-width:22px;height:22px;font-size:11px}
+    .std-label{font-size:8px;top:25px}
+    .marker-icon{width:32px;height:32px;font-size:17px}
+    .marker-label{font-size:9px;top:36px}
+    .sector-label{font-size:20px!important}
+    .status,.hint,.bottom{display:none!important}
+    .top{left:58px;right:8px;top:8px}
+    .map-context{
+      min-width:190px;
+      max-width:calc(100vw - 70px);
+      font-size:11px
+    }
+    .map-context button{padding:9px;font-size:11px}
+  }
+
+  @media (max-width: 430px){
+    .drawer{width:min(250px,calc(92vw - 48px))}
+    #stage.drawer-open{left:min(92vw,298px)}
+    .control-rail{width:46px}
+    #stage{left:46px}
+    .menu-btn,.zoom{left:5px}
+    .menu-btn,.zoom button{width:34px;height:34px}
+  }
+
 </style>
 </head>
 <body>
@@ -332,27 +404,27 @@
   const menuBtn=document.getElementById('menuBtn');
 
   function setDrawer(open){
+    const mobile=window.matchMedia('(max-width: 768px)').matches;
+    const keepX=cx, keepY=cy, keepZoom=zoom;
+
     drawer.classList.toggle('open',open);
     stage.classList.toggle('drawer-open',open);
     menuBtn.textContent=open?'×':'☰';
     menuBtn.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');
 
-    if(open){
-      // Wait until the map viewport has actually finished moving,
-      // then invoke the exact same action as pressing the ⌂ button.
-      const onDone=()=>{
-        stage.removeEventListener('transitionend',onDone);
-        document.getElementById('home').click();
-      };
-      stage.addEventListener('transitionend',onDone,{once:true});
-
-      // Safety fallback if transitionend is skipped by the browser.
-      setTimeout(()=>{
-        if(drawer.classList.contains('open')){
-          document.getElementById('home').click();
-        }
-      },230);
-    }
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(mobile){
+        cx=keepX; cy=keepY; zoom=keepZoom;
+        clampCenter();
+        renderTiles();
+      }else if(open){
+        const home=document.getElementById('home');
+        if(home) home.click();
+      }else{
+        clampCenter();
+        renderTiles();
+      }
+    }));
   }
   menuBtn.addEventListener('click',()=>setDrawer(!drawer.classList.contains('open')));
   document.querySelectorAll('.drawer-head').forEach(btn=>{
@@ -1137,6 +1209,93 @@
     cy=my-(sy-stage.clientHeight/2)/newSize;
     clampCenter();schedule();
   }
+
+  
+  let touchMode=null;
+  let touchStart=null;
+  let pinchStart=null;
+
+  function stagePointFromTouch(t){
+    const sr=stage.getBoundingClientRect();
+    return {x:t.clientX-sr.left,y:t.clientY-sr.top};
+  }
+
+  stage.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){
+      const p=stagePointFromTouch(e.touches[0]);
+      touchMode='pan';
+      touchStart={x:p.x,y:p.y,cx,cy};
+      stage.classList.add('drag');
+      e.preventDefault();
+    }else if(e.touches.length===2){
+      const p1=stagePointFromTouch(e.touches[0]);
+      const p2=stagePointFromTouch(e.touches[1]);
+      const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+      const dist=Math.hypot(p2.x-p1.x,p2.y-p1.y);
+      const rect=mapRect();
+      const nx=(mx-rect.left)/rect.size;
+      const ny=(my-rect.top)/rect.size;
+      pinchStart={dist,zoom,nx,ny,mx,my};
+      touchMode='pinch';
+      e.preventDefault();
+    }
+  },{passive:false});
+
+  stage.addEventListener('touchmove',e=>{
+    if(touchMode==='pan' && e.touches.length===1 && touchStart){
+      const p=stagePointFromTouch(e.touches[0]);
+      const rect=mapRect();
+      const dx=p.x-touchStart.x;
+      const dy=p.y-touchStart.y;
+      // Convert pixel motion into normalized map center motion.
+      cx=touchStart.cx-dx/rect.size;
+      cy=touchStart.cy-dy/rect.size;
+      clampCenter();
+      schedule();
+      e.preventDefault();
+    }else if(touchMode==='pinch' && e.touches.length===2 && pinchStart){
+      const p1=stagePointFromTouch(e.touches[0]);
+      const p2=stagePointFromTouch(e.touches[1]);
+      const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+      const dist=Math.max(1,Math.hypot(p2.x-p1.x,p2.y-p1.y));
+      const targetZoom=Math.max(1,Math.min(16,pinchStart.zoom*(dist/pinchStart.dist)));
+
+      // Keep the map point under the pinch midpoint stable.
+      zoom=targetZoom;
+      const sr=stage.getBoundingClientRect();
+      const newSize=baseSize*zoom;
+      const targetLeft=mx-pinchStart.nx*newSize;
+      const targetTop=my-pinchStart.ny*newSize;
+      const stageCenterX=stage.clientWidth/2;
+      const stageCenterY=stage.clientHeight/2;
+      cx=.5-(targetLeft-(stageCenterX-newSize/2))/newSize;
+      cy=.5-(targetTop-(stageCenterY-newSize/2))/newSize;
+      clampCenter();
+      schedule();
+      e.preventDefault();
+    }
+  },{passive:false});
+
+  stage.addEventListener('touchend',e=>{
+    if(e.touches.length===0){
+      touchMode=null;
+      touchStart=null;
+      pinchStart=null;
+      stage.classList.remove('drag');
+    }else if(e.touches.length===1){
+      const p=stagePointFromTouch(e.touches[0]);
+      touchMode='pan';
+      touchStart={x:p.x,y:p.y,cx,cy};
+      pinchStart=null;
+    }
+  },{passive:false});
+
+  stage.addEventListener('touchcancel',()=>{
+    touchMode=null;
+    touchStart=null;
+    pinchStart=null;
+    stage.classList.remove('drag');
+  },{passive:false});
 
   stage.addEventListener('wheel',e=>{
     e.preventDefault();
