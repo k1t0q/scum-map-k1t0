@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>SCUM MAP k1t0 v6.9</title>
+<title>SCUM MAP k1t0 v7.0</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090b0e;font-family:Inter,Segoe UI,Arial,sans-serif;color:#fff}
 #stage{position:fixed;left:64px;right:0;top:0;bottom:0;overflow:hidden;background:#090b0e;cursor:grab;touch-action:none;overscroll-behavior:none;transition:left .18s ease}
@@ -363,9 +363,43 @@
     -webkit-backface-visibility:hidden;
   }
   .tile{
-    transform:translateZ(0);
     backface-visibility:hidden;
     -webkit-backface-visibility:hidden;
+  }
+
+
+  #tiles{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    contain:paint;
+    isolation:isolate;
+  }
+
+  /* iOS Safari can leave stale GPU-composited image surfaces behind after
+     rapid zoom changes. Do not force each tile into its own GPU layer there. */
+  @supports (-webkit-touch-callout:none){
+    #tiles{
+      transform:none!important;
+      will-change:auto!important;
+      backface-visibility:visible!important;
+      -webkit-backface-visibility:visible!important;
+    }
+    .tile{
+      transform:none!important;
+      will-change:auto!important;
+      backface-visibility:visible!important;
+      -webkit-backface-visibility:visible!important;
+    }
+  }
+
+
+  #fallbackImg{
+    clip-path:inset(0);
+    -webkit-clip-path:inset(0);
+  }
+  @supports (-webkit-touch-callout:none){
+    #fallbackImg{transform:none!important;will-change:auto!important}
   }
 
 </style>
@@ -612,6 +646,11 @@
   let pendingLevel=null;
   let pendingWanted=new Set();
   let pendingLoaded=new Set();
+
+  const IS_IOS_SAFARI=/iP(ad|hone|od)/.test(navigator.userAgent) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  let lastIosLevel=activeLevel;
+
 
   const SECTOR_ROWS=['D','C','B','A','Z'];
   const SECTOR_COLS=['4','3','2','1','0'];
@@ -1185,6 +1224,18 @@
     renderRAF=0;
     clampCenter();
     const rect=mapRect();
+
+    // Hard clip HD tiles to the visible square of the map.
+    // This prevents Safari from painting stale tile surfaces below/around it.
+    const vwClip=stage.clientWidth;
+    const vhClip=stage.clientHeight;
+    const clipTop=Math.max(0,rect.top);
+    const clipLeft=Math.max(0,rect.left);
+    const clipRight=Math.max(0,vwClip-(rect.left+rect.size));
+    const clipBottom=Math.max(0,vhClip-(rect.top+rect.size));
+    const clipValue=`inset(${clipTop}px ${clipRight}px ${clipBottom}px ${clipLeft}px)`;
+    tilesEl.style.clipPath=clipValue;
+    tilesEl.style.webkitClipPath=clipValue;
     renderFallback(rect);
     renderTraders(rect);
     renderSectors(rect);
@@ -1232,8 +1283,8 @@
           img.referrerPolicy='no-referrer';
           img.dataset.key=t.key;
           img.dataset.level=String(level);
-          img.style.opacity='0';
-          img.style.transition='opacity .10s linear';
+          img.style.opacity=IS_IOS_SAFARI?'1':'0';
+          img.style.transition=IS_IOS_SAFARI?'none':'opacity .10s linear';
           img.onload=()=>{
             successfulTiles++;
             img.dataset.loaded='1';
@@ -1279,6 +1330,24 @@
       const lvl=Number(node.dataset.level);
       const transitionKeep=(pendingLevel!==null && (lvl===activeLevel || lvl===pendingLevel));
       if(!keep.has(key) && !transitionKeep){node.remove();tileNodes.delete(key)}
+    }
+
+    // iOS Safari: once a quality switch is complete, physically detach every
+    // stale level immediately. This avoids ghost/streak surfaces in WebKit.
+    if(IS_IOS_SAFARI && pendingLevel===null && activeLevel!==lastIosLevel){
+      for(const [key,node] of [...tileNodes]){
+        const lvl=Number(node.dataset.level);
+        if(lvl!==activeLevel){
+          node.remove();
+          tileNodes.delete(key);
+        }
+      }
+      lastIosLevel=activeLevel;
+
+      // Force WebKit to commit the cleaned paint layer once, only on level changes.
+      tilesEl.style.visibility='hidden';
+      void tilesEl.offsetHeight;
+      tilesEl.style.visibility='visible';
     }
 
     const n=2**(targetLevel-MIN_LEVEL);
