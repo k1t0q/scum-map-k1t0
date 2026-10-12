@@ -119,6 +119,7 @@
 #mapFocusOverlay{position:absolute;left:0;top:0;width:48px;height:48px;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:45000;display:none;border:3px solid var(--pulse-color,#e25555);box-shadow:0 0 0 6px color-mix(in srgb,var(--pulse-color,#e25555) 25%,transparent);background:color-mix(in srgb,var(--pulse-color,#e25555) 15%,transparent)}
 #mapFocusOverlay.active{display:block;animation:focus-ring-pulse 1s ease-in-out 3}
 @keyframes focus-ring-pulse{0%,100%{opacity:.32;box-shadow:0 0 0 5px color-mix(in srgb,var(--pulse-color) 20%,transparent)}50%{opacity:1;box-shadow:0 0 0 23px color-mix(in srgb,var(--pulse-color) 22%,transparent)}}
+.map-marker:not(.object-text) .marker-label{font-size:12px!important;line-height:1.25;padding:4px 7px!important}
 .map-marker.map-focus{z-index:5}
 .map-marker.map-focus::before{content:"";position:absolute;left:50%;top:50%;width:48px;height:48px;border:2px solid var(--object-color,#e25555);background:var(--object-color,#e25555);border-radius:50%;transform:translate(-50%,-50%) scale(.45);opacity:0;pointer-events:none;z-index:-1;animation:map-focus-pulse 1.05s ease-out 3}
 @keyframes map-focus-pulse{0%{transform:translate(-50%,-50%) scale(.45);opacity:.35}75%{opacity:.12}100%{transform:translate(-50%,-50%) scale(2.35);opacity:0}}
