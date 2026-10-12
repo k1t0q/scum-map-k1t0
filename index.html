@@ -556,7 +556,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       </div>
       
       <button id="addMarkerBtn" class="add-marker-btn">＋ ДОБАВИТЬ МЕТКУ</button>
-      <div class="object-list-wrap"><div class="filter-head">ОБЪЕКТЫ (<span id="objectCount">0</span>)</div><input id="objectSearch" class="object-search" placeholder="Поиск по названию, описанию"><div id="objectList" class="object-list"></div></div>
+      <div class="object-list-wrap"><div class="filter-head">ОБЪЕКТЫ (<span id="objectCount">0</span>)</div><input id="objectSearch" class="object-search" placeholder="Поиск по названию или нику"><div id="objectList" class="object-list"></div></div>
     </div>
   </section>
 </aside>
@@ -1225,12 +1225,31 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   objectSize.addEventListener('input',()=>objectSizeVal.value=objectSize.value);
   markerType.addEventListener('change',()=>{objectIcon.value=MARKER_META[markerType.value]?.icon||'📍';objectColor.value=MARKER_META[markerType.value]?.color||'#ffffff';renderObjectIcons()});
   function renderObjectList(){
-    const all=getMarkers(),box=document.getElementById('objectList'),q=document.getElementById('objectSearch').value.toLowerCase();
+    const all=getMarkers(),box=document.getElementById('objectList'),q=document.getElementById('objectSearch').value.trim().toLocaleLowerCase('ru');
     document.getElementById('objectCount').textContent=all.length;
     box.replaceChildren();
-    for(const m of all.filter(x=>((x.name||'')+' '+(x.note||'')).toLowerCase().includes(q))){
-      const b=document.createElement('button');b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
+    let matches=0;
+    for(const m of all){
+      const nicks=Array.isArray(m.enemyNicks)?m.enemyNicks:(Array.isArray(m.enemy_nicks)?m.enemy_nicks:[]);
+      const matchingNicks=q?nicks.filter(n=>String(n).toLocaleLowerCase('ru').includes(q)):[];
+      const matchingObject=((m.name||'')+' '+(m.note||'')).toLocaleLowerCase('ru').includes(q);
+      if(!matchingObject&&!matchingNicks.length)continue;
+      matches++;
+      const b=document.createElement('button');
+      b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
+      if(matchingNicks.length){
+        const detail=document.createElement('span');
+        detail.textContent='Ник: '+matchingNicks.join(', ')+' · Отряд: '+(m.name||'Без названия');
+        detail.style.cssText='display:block;margin-top:4px;font-size:11px;font-weight:400;color:#a7b6ba;white-space:normal;overflow-wrap:anywhere';
+        b.appendChild(detail);
+      }
       b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusMapMarker(m);showMarkerDetails(m)};box.appendChild(b);
+    }
+    if(q&&!matches){
+      const empty=document.createElement('div');
+      empty.textContent='Ничего не найдено';
+      empty.style.cssText='padding:12px 8px;color:#91a1ab;font-size:12px';
+      box.appendChild(empty);
     }
   }
   document.getElementById('objectSearch').addEventListener('input',renderObjectList);
