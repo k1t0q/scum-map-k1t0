@@ -465,6 +465,13 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     </div>
   </section>
 </aside>
+<div id="markerViewer" class="marker-popup hidden" style="max-height:calc(100dvh - 24px);overflow:auto">
+ <h3 id="markerViewerTitle"></h3>
+ <div id="markerViewerType" style="font-size:12px;color:#b8c9d0;margin-bottom:12px"></div>
+ <div style="font-size:11px;color:#91a1ab;margin-bottom:5px">КОММЕНТАРИЙ</div>
+ <div id="markerViewerNote" style="font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:16px"></div>
+ <div class="popup-actions"><button type="button" id="markerViewerEdit" class="save-marker">РЕДАКТИРОВАТЬ</button><button type="button" id="markerViewerClose" class="cancel-marker">ЗАКРЫТЬ</button></div>
+</div>
 <div id="markerPopup" class="marker-popup hidden">
   <h3 id="markerPopupTitle">Новая метка</h3><div id="markerPopupHint" style="font-size:10px;color:#89969e;margin:-4px 0 7px"></div>
   <label>Тип</label>
@@ -944,7 +951,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       el.innerHTML=`<div class="marker-icon" style="background:${meta.color}">${meta.icon}</div>${m.name?`<div class="marker-label">${escapeHtml(m.name)}</div>`:''}`;
       el.addEventListener('click',e=>{
         e.stopPropagation();
-        openMarkerPopup(m.x,m.y,m);
+        showMarkerDetails(m);
       });
       el.addEventListener('contextmenu',e=>{
         e.preventDefault();
@@ -963,6 +970,25 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
 
   function escapeHtml(s){
     return String(s||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+  }
+
+  function showMarkerDetails(m){
+    const viewer=document.getElementById('markerViewer');
+    document.getElementById('markerViewerTitle').textContent=m.name||'Без названия';
+    const meta=MARKER_META[m.type]||MARKER_META.temp;
+    document.getElementById('markerViewerType').textContent=(meta.icon||'')+' '+({base:'База',stash:'Схрон',enemy:'Вражеская база',vehicle:'Транспорт'}[m.type]||'Метка');
+    const note=document.getElementById('markerViewerNote');
+    note.textContent=m.note?.trim()||'Комментарий не добавлен';
+    note.style.color=m.note?.trim()?'#e4ecef':'#85939c';
+    document.getElementById('markerViewerEdit').onclick=()=>{viewer.classList.add('hidden');openMarkerPopup(m.x,m.y,m)};
+    document.getElementById('markerViewerClose').onclick=()=>viewer.classList.add('hidden');
+    viewer.classList.remove('hidden');
+    const height=viewer.offsetHeight;
+    const sr=stage.getBoundingClientRect(),rect=mapRect();
+    const screenX=sr.left+rect.left+m.x*rect.size;
+    const screenY=sr.top+rect.top+m.y*rect.size;
+    viewer.style.left=Math.max(10,Math.min(window.innerWidth-viewer.offsetWidth-10,screenX+12))+'px';
+    viewer.style.top=Math.max(10,Math.min(window.innerHeight-height-12,screenY+12))+'px';
   }
 
   function openMarkerPopup(nx,ny,existing=null){
