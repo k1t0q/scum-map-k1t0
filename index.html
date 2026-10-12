@@ -465,7 +465,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     </div>
   </section>
 </aside>
-<div id="markerViewer" class="marker-popup hidden" style="max-height:calc(100dvh - 24px);overflow:auto">
+<div id="markerViewer" class="marker-popup hidden" style="max-height:calc(100dvh - 24px);overflow:auto;left:50%;top:50%;transform:translate(-50%,-50%);width:min(310px,calc(100vw - 28px))">
  <h3 id="markerViewerTitle"></h3>
  <div id="markerViewerType" style="font-size:12px;color:#b8c9d0;margin-bottom:12px"></div>
  <div style="font-size:11px;color:#91a1ab;margin-bottom:5px">КОММЕНТАРИЙ</div>
@@ -983,12 +983,9 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     document.getElementById('markerViewerEdit').onclick=()=>{viewer.classList.add('hidden');openMarkerPopup(m.x,m.y,m)};
     document.getElementById('markerViewerClose').onclick=()=>viewer.classList.add('hidden');
     viewer.classList.remove('hidden');
-    const height=viewer.offsetHeight;
-    const sr=stage.getBoundingClientRect(),rect=mapRect();
-    const screenX=sr.left+rect.left+m.x*rect.size;
-    const screenY=sr.top+rect.top+m.y*rect.size;
-    viewer.style.left=Math.max(10,Math.min(window.innerWidth-viewer.offsetWidth-10,screenX+12))+'px';
-    viewer.style.top=Math.max(10,Math.min(window.innerHeight-height-12,screenY+12))+'px';
+    // Keep the details card centered, including edit button, at every zoom level.
+    viewer.style.left='50%';
+    viewer.style.top='50%';
   }
 
   function openMarkerPopup(nx,ny,existing=null){
