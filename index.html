@@ -1311,10 +1311,13 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     const posts=document.getElementById('hubMarkerPosts');
     const compose=document.getElementById('hubMarkerCompose');
     const buttons=markerPopup.querySelector('.popup-actions');
+    // Keep publications inside the edit-only pane, including on mobile.
+    const editRest=document.getElementById('markerEditPaneRest');
     if(window.matchMedia('(max-width:768px)').matches){
-      editor.before(posts,compose);
+      editRest.insertBefore(posts,editor);
+      editRest.insertBefore(compose,editor);
     }else{
-      buttons.before(posts,compose);
+      editRest.append(posts,compose);
     }
     renderHubMarkerPosts(existing||null);
     markerPopup.classList.remove('hidden');
