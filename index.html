@@ -117,7 +117,7 @@
   .markers-layer{position:absolute;inset:0;pointer-events:none;z-index:40000}
   .map-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;z-index:1}
 #mapFocusOverlay{position:absolute;left:0;top:0;width:48px;height:48px;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:45000;display:none;border:3px solid var(--pulse-color,#e25555);box-shadow:0 0 0 6px color-mix(in srgb,var(--pulse-color,#e25555) 25%,transparent);background:color-mix(in srgb,var(--pulse-color,#e25555) 15%,transparent)}
-#mapFocusOverlay.active{display:block;animation:focus-ring-pulse 1s ease-in-out 3}
+#mapFocusOverlay.active{display:block;animation:focus-ring-pulse 1.4s ease-in-out infinite}
 @keyframes focus-ring-pulse{0%,100%{opacity:.32;box-shadow:0 0 0 5px color-mix(in srgb,var(--pulse-color) 20%,transparent)}50%{opacity:1;box-shadow:0 0 0 23px color-mix(in srgb,var(--pulse-color) 22%,transparent)}}
 .map-marker:not(.object-text) .marker-label{font-size:12px!important;line-height:1.25;padding:4px 7px!important}
 .map-marker.map-focus{z-index:5}
@@ -1079,7 +1079,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     markersLayer.innerHTML='';
     const markers=getMarkers();
     const halo=document.getElementById('mapFocusOverlay');
-    if(focusedMarkerId&&Date.now()<focusUntil){
+    if(focusedMarkerId){
       const fm=markers.find(m=>m.id===focusedMarkerId);
       if(fm){halo.style.left=(rect.left+fm.x*rect.size)+'px';halo.style.top=(rect.top+fm.y*rect.size)+'px';}
       else halo.style.display='none';
@@ -1092,7 +1092,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       el.style.top=(rect.top+m.y*rect.size)+'px';
       const meta=MARKER_META[m.type]||MARKER_META.marker;
       el.classList.toggle('object-text',m.type==='text');
-      el.classList.toggle('map-focus',m.id===focusedMarkerId&&Date.now()<focusUntil);
+      el.classList.toggle('map-focus',m.id===focusedMarkerId);
       el.style.setProperty('--object-color',m.color||meta.color);
       el.style.fontSize=(m.size||24)+'px';
       el.innerHTML=`<div class="marker-icon" style="background:${m.color||meta.color};width:${m.size||32}px;height:${m.size||32}px;font-size:${Math.round((m.size||32)*.5)}px">${escapeHtml(m.icon||meta.icon)}</div>${(m.showLabel!==false||m.type==='text')&&m.name?`<div class="marker-label">${escapeHtml(m.name)}</div>`:''}`;
@@ -1159,7 +1159,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     box.replaceChildren();
     for(const m of all.filter(x=>((x.name||'')+' '+(x.note||'')).toLowerCase().includes(q))){
       const b=document.createElement('button');b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
-      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusedMarkerId=m.id;focusUntil=Date.now()+3400;const halo=document.getElementById('mapFocusOverlay');halo.style.display='block';halo.style.setProperty('--pulse-color',m.color||MARKER_META[m.type]?.color||'#e25555');halo.classList.remove('active');void halo.offsetWidth;halo.classList.add('active');renderMarkers(mapRect());setTimeout(()=>{if(focusedMarkerId===m.id&&Date.now()>=focusUntil){focusedMarkerId=null;halo.classList.remove('active');halo.style.display='none'}},3450)};box.appendChild(b);
+      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusedMarkerId=m.id;const halo=document.getElementById('mapFocusOverlay');halo.style.display='block';halo.style.setProperty('--pulse-color',m.color||MARKER_META[m.type]?.color||'#e25555');halo.classList.remove('active');void halo.offsetWidth;halo.classList.add('active');renderMarkers(mapRect())};box.appendChild(b);
     }
   }
   document.getElementById('objectSearch').addEventListener('input',renderObjectList);
