@@ -1125,6 +1125,12 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       el.innerHTML=`<div class="marker-icon" style="background:${m.color||meta.color};width:${m.size||32}px;height:${m.size||32}px;font-size:${Math.round((m.size||32)*.5)}px">${escapeHtml(m.icon||meta.icon)}</div>${(m.showLabel!==false||m.type==='text')&&m.name?`<div class="marker-label">${escapeHtml(m.name)}</div>`:''}`;
       el.addEventListener('click',e=>{
         e.stopPropagation();
+        stopInertia();
+        targetCx=m.x;
+        targetCy=m.y;
+        targetZoom=4.4;
+        clampTarget();
+        requestCamera();
         showMarkerDetails(m);
       });
       markersLayer.appendChild(el);
