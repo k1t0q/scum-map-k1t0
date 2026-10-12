@@ -460,6 +460,11 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
  #markerViewer .popup-actions{margin-top:7px!important;gap:6px!important}
  #markerViewer .popup-actions button{min-height:30px!important;padding:6px 5px!important;font-size:10px!important}
 }
+#mapPhotoLightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:60000;display:flex;align-items:center;justify-content:center;padding:32px;box-sizing:border-box}
+#mapPhotoLightbox.hidden{display:none}
+#mapPhotoFull{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+#mapPhotoClose{position:absolute;right:18px;top:12px;color:#fff;background:#182128;border:1px solid #526168;border-radius:8px;font-size:28px;width:42px;height:42px;cursor:pointer}
+#markerViewerPhotos img{width:64px;height:54px;object-fit:cover;border-radius:6px;cursor:zoom-in}
 .object-icon-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:5px 0}
 .object-icon-grid button{background:#16231d;border:1px solid #395149;border-radius:5px;color:white;min-height:30px;cursor:pointer}
 .object-icon-grid button.active{border-color:#5ee09b;background:#23503c}
@@ -530,8 +535,10 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
  <div id="markerViewerType" style="font-size:12px;color:#b8c9d0;margin-bottom:12px"></div>
  <div style="font-size:11px;color:#91a1ab;margin-bottom:5px">КОММЕНТАРИЙ</div>
  <div id="markerViewerNote" style="font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:16px"></div>
+ <div id="markerViewerPhotos" class="hub-marker-photos" style="margin:8px 0"></div>
  <div class="popup-actions"><button type="button" id="markerViewerEdit" class="save-marker">РЕДАКТИРОВАТЬ</button><button type="button" id="markerViewerClose" class="cancel-marker">ЗАКРЫТЬ</button></div>
 </div>
+<div id="mapPhotoLightbox" class="hidden" role="dialog" aria-label="Просмотр фото"><button id="mapPhotoClose" type="button" aria-label="Закрыть">×</button><img id="mapPhotoFull" alt="Фото базы"></div>
 <div id="markerPopup" class="marker-popup hidden">
   <h3 id="markerPopupTitle">Новая метка</h3><div id="markerPopupHint" style="font-size:10px;color:#89969e;margin:-4px 0 7px"></div>
   <label>Тип</label>
@@ -1085,6 +1092,11 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     return String(s||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
   }
 
+  function openMapPhoto(url){document.getElementById('mapPhotoFull').src=url;document.getElementById('mapPhotoLightbox').classList.remove('hidden')}
+  function closeMapPhoto(){document.getElementById('mapPhotoLightbox').classList.add('hidden');document.getElementById('mapPhotoFull').removeAttribute('src')}
+  document.getElementById('mapPhotoClose').onclick=closeMapPhoto;
+  document.getElementById('mapPhotoLightbox').addEventListener('click',e=>{if(e.target.id==='mapPhotoLightbox')closeMapPhoto()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMapPhoto()});
   function showMarkerDetails(m){
     const viewer=document.getElementById('markerViewer');
     document.getElementById('markerViewerTitle').textContent=m.name||'Без названия';
@@ -1093,6 +1105,13 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     const note=document.getElementById('markerViewerNote');
     note.textContent=m.note?.trim()||'Комментарий не добавлен';
     note.style.color=m.note?.trim()?'#e4ecef':'#85939c';
+    const gallery=document.getElementById('markerViewerPhotos');gallery.replaceChildren();
+    const related=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m.name?.trim().toLocaleLowerCase('ru'));
+    for(const p of related)for(const url of (p.images||[])){
+      if(typeof url!=='string'||!url.startsWith('https://'))continue;
+      const img=document.createElement('img');img.src=url;img.loading='lazy';img.alt='Фото '+m.name;
+      img.onclick=()=>openMapPhoto(url);gallery.appendChild(img);
+    }
     document.getElementById('markerViewerEdit').onclick=()=>{viewer.classList.add('hidden');openMarkerPopup(m.x,m.y,m)};
     document.getElementById('markerViewerClose').onclick=()=>viewer.classList.add('hidden');
     viewer.classList.remove('hidden');
@@ -1183,7 +1202,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       const photos=document.createElement('div');photos.className='hub-marker-photos';
       for(const url of (p.images||[])){
         if(typeof url!=='string'||!url.startsWith('https://'))continue;
-        const img=document.createElement('img');img.src=url;img.alt='Фото базы';img.loading='lazy';img.onclick=()=>window.open(url,'_blank','noopener');photos.appendChild(img);
+        const img=document.createElement('img');img.src=url;img.alt='Фото базы';img.loading='lazy';img.onclick=()=>openMapPhoto(url);photos.appendChild(img);
       }
       card.appendChild(photos);box.appendChild(card);
     }
