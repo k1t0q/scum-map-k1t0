@@ -1172,7 +1172,9 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   function showMarkerDetails(m){
     focusMapMarker(m);
     const viewer=document.getElementById('markerViewer');
-    fillNickList(document.getElementById('markerViewerNicks'),m.enemyNicks||m.enemy_nicks||[]);
+    const rosterNicks=m.enemyNicks||m.enemy_nicks||[];
+    fillNickList(document.getElementById('markerViewerNicks'),rosterNicks);
+    document.getElementById('markerViewerRoster').hidden=rosterNicks.length===0;
     document.getElementById('markerViewerTitle').textContent=m.name||'Без названия';
     const meta=MARKER_META[m.type]||MARKER_META.temp;
     document.getElementById('markerViewerType').textContent=(m.icon||meta.icon||'')+' '+({base:'Вражеская база',stash:'Схрон',enemy:'Вражеская база',vehicle:'Транспорт',marker:'Маркер',text:'Текст'}[m.type]||'Объект');
