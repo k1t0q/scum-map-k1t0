@@ -414,6 +414,11 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:not(.scum-default-group)
 html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type{border:0!important}
 html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-head{pointer-events:none!important}
 </style><style>
+#markerPopup{width:min(390px,calc(100vw - 24px))!important;max-width:calc(100vw - 24px);overflow-x:hidden!important;box-sizing:border-box}
+#markerPopup .map-object-editor,#markerPopup .object-editor-row,#markerPopup .popup-actions{min-width:0;max-width:100%}
+#markerPopup .object-editor-row>*{min-width:0}
+#markerPopup input[type=range]{width:100%;max-width:100%;min-width:0}
+#markerPopup .popup-actions button{min-width:0}
 .object-icon-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:5px 0}
 .object-icon-grid button{background:#16231d;border:1px solid #395149;border-radius:5px;color:white;min-height:30px;cursor:pointer}
 .object-icon-grid button.active{border-color:#5ee09b;background:#23503c}
@@ -1038,8 +1043,8 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     function openMarkerPopup(nx,ny,existing=null){
     pendingMarkerNorm={x:nx,y:ny};
     editingMarkerId=existing?existing.id:null;
-    document.getElementById('markerPopupTitle').textContent=(existing?'Редактировать метку':'Новая метка')+' · '+currentProfile;
-    document.getElementById('markerPopupHint').textContent=existing?'Клик по метке открывает это окно. Нажми «УДАЛИТЬ», чтобы убрать её. ПКМ по метке — быстрое удаление.':'Метка сохранится только в текущем профиле: '+currentProfile;
+    document.getElementById('markerPopupTitle').textContent=(existing?'Редактировать метку':'Новая метка');
+    document.getElementById('markerPopupHint').textContent=existing?'Клик по метке открывает это окно. Нажми «УДАЛИТЬ», чтобы убрать её. ПКМ по метке — быстрое удаление.':'Укажи название, описание и параметры метки.';
     markerType.value=existing?existing.type:'enemy';
     markerName.value=existing?existing.name:'';
     markerNote.value=existing?existing.note:'';
