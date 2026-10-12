@@ -1123,7 +1123,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     const viewer=document.getElementById('markerViewer');
     document.getElementById('markerViewerTitle').textContent=m.name||'Схрон';
     document.getElementById('markerViewerType').textContent='📦 Общий схрон отряда';
-    document.getElementById('markerViewerNote').textContent='Владелец: '+(m.stashOwner||'Участник')+'\\nОсталось: '+(m.stashDays??'?')+' дн.\\nПроверил: '+(m.stashCheckedBy||'Участник');
+    document.getElementById('markerViewerNote').textContent='Владелец: '+(m.stashOwner||'Участник')+'\nОсталось: '+(m.stashDays??'?')+' дн.\nПроверил: '+(m.stashCheckedBy||'Участник');
     document.getElementById('markerViewerRoster').hidden=true;
     document.getElementById('markerViewerPhotos').replaceChildren();
     const edit=document.getElementById('markerViewerEdit');edit.textContent='ПЕРЕЙТИ К СХРОНУ';
