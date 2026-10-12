@@ -406,6 +406,7 @@
 </style>
 <style>
 html.hub-embed .drawer-title{display:block!important}
+html.hub-embed #stage{transition:none!important}
 html.hub-embed .profile-block,
 html.hub-embed .scum-default-group{display:none!important}
 html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type{border:0!important}
@@ -527,6 +528,8 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       syncTargets();
       renderTiles();
       schedule();
+      // Recalculate once the layout has settled after the panel width changes.
+      requestAnimationFrame(()=>{clampCenter();syncTargets();renderTiles();schedule();});
     }));
   }
   menuBtn.addEventListener('click',()=>setDrawer(!drawer.classList.contains('open')));
