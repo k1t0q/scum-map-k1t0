@@ -462,7 +462,11 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
 }
 #mapPhotoLightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:60000;display:flex;align-items:center;justify-content:center;padding:32px;box-sizing:border-box}
 #mapPhotoLightbox.hidden{display:none}
-#mapPhotoFull{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+#mapPhotoFull{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;cursor:zoom-in;transition:transform .2s ease;transform-origin:center center}
+#mapPhotoFull.zoomed{transform:scale(2);cursor:zoom-out}
+#mapPhotoLightbox{overflow:hidden}
+#markerViewerPhotos{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px!important}
+#markerViewerPhotos img{display:block;width:100%!important;height:51px!important;min-width:0;object-fit:cover;border-radius:6px;cursor:zoom-in}
 #mapPhotoClose{position:absolute;right:18px;top:12px;color:#fff;background:#182128;border:1px solid #526168;border-radius:8px;font-size:28px;width:42px;height:42px;cursor:pointer}
 #markerViewerPhotos img{width:64px;height:54px;object-fit:cover;border-radius:6px;cursor:zoom-in}
 .object-icon-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:5px 0}
@@ -1092,9 +1096,10 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     return String(s||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
   }
 
-  function openMapPhoto(url){document.getElementById('mapPhotoFull').src=url;document.getElementById('mapPhotoLightbox').classList.remove('hidden')}
-  function closeMapPhoto(){document.getElementById('mapPhotoLightbox').classList.add('hidden');document.getElementById('mapPhotoFull').removeAttribute('src')}
+  function openMapPhoto(url){const img=document.getElementById('mapPhotoFull');img.classList.remove('zoomed');img.style.transformOrigin='center center';img.src=url;document.getElementById('mapPhotoLightbox').classList.remove('hidden')}
+  function closeMapPhoto(){document.getElementById('mapPhotoLightbox').classList.add('hidden');const img=document.getElementById('mapPhotoFull');img.classList.remove('zoomed');img.removeAttribute('src')}
   document.getElementById('mapPhotoClose').onclick=closeMapPhoto;
+  document.getElementById('mapPhotoFull').addEventListener('click',e=>{const img=e.currentTarget;if(!img.classList.contains('zoomed')){const rect=img.getBoundingClientRect();img.style.transformOrigin=((e.clientX-rect.left)/rect.width*100)+'% '+((e.clientY-rect.top)/rect.height*100)+'%';}img.classList.toggle('zoomed')});
   document.getElementById('mapPhotoLightbox').addEventListener('click',e=>{if(e.target.id==='mapPhotoLightbox')closeMapPhoto()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMapPhoto()});
   function showMarkerDetails(m){
