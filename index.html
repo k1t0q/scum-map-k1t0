@@ -1047,19 +1047,22 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     deleteMarkerBtn.style.display=existing?'block':'none';
     markerPopup.classList.remove('hidden');
 
-    if(!window.matchMedia('(max-width:768px)').matches){
-      const rect=mapRect();
-      const sr=stage.getBoundingClientRect();
-      const screenX=sr.left+rect.left+nx*rect.size;
-      const screenY=sr.top+rect.top+ny*rect.size;
-      const px=Math.min(window.innerWidth-330,Math.max(10,screenX+12));
-      const popupHeight=markerPopup.offsetHeight; const py=Math.min(Math.max(10,window.innerHeight-popupHeight-12),Math.max(10,screenY+12));
-      markerPopup.style.left=px+'px';
-      markerPopup.style.top=py+'px';
-    }else{
-      markerPopup.style.left='';
-      markerPopup.style.top='';
-    }
+    // Always keep the editor fully inside the iframe viewport.
+    // Place it near the selected point when possible, otherwise flip it to the other side.
+    markerPopup.style.transform='none';
+    const rect=mapRect(), sr=stage.getBoundingClientRect();
+    const x=sr.left+rect.left+nx*rect.size;
+    const y=sr.top+rect.top+ny*rect.size;
+    const margin=12, gap=14;
+    const width=markerPopup.offsetWidth, height=markerPopup.offsetHeight;
+    const availableWidth=window.innerWidth;
+    let left=x+gap;
+    if(left+width+margin>availableWidth) left=x-width-gap;
+    left=Math.max(margin,Math.min(availableWidth-width-margin,left));
+    let top=y-height/2;
+    top=Math.max(margin,Math.min(window.innerHeight-height-margin,top));
+    markerPopup.style.left=left+'px';
+    markerPopup.style.top=top+'px';
   }
 
   function closeMarkerPopup(){
