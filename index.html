@@ -1069,6 +1069,17 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     hubParentOrigin=e.origin;
     sendMapReady();
   });
+  window.addEventListener('message',e=>{
+    if(!hubSharedMode||e.source!==parent||!allowedHubOrigins.has(e.origin))return;
+    if(e.data?.kind==='scumStashPick'){
+      stashPickPostId=String(e.data.id);addMarkerMode=false;setDrawer(false);stage.style.cursor='crosshair';showToast('Нажми на карту для размещения схрона',4000);
+    }
+    if(e.data?.kind==='scumStashFocus'){
+      const m=getMarkers().find(m=>m.id==='stash-post-'+e.data.id);
+      if(m){stashLayerVisible=true;stashToggle.textContent='📦 Схроны: ВКЛ';focusStash(m);showLinkedStashDetails(m)}
+      else{stashPickPostId=String(e.data.id);stage.style.cursor='crosshair';showToast('Точка не указана. Выбери место схрона на карте',4000)}
+    }
+  });
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 
 
@@ -1100,6 +1111,26 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   }
 
   let focusedMarkerId=null,focusUntil=0;
+  let stashLayerVisible=true;
+  let stashPickPostId=null;
+  const stashToggle=document.createElement('button');
+  stashToggle.type='button';stashToggle.textContent='📦 Схроны: ВКЛ';stashToggle.style.cssText='width:100%;padding:9px;margin:8px 0;background:#13251c;color:#c6f4d5;border:1px solid #315b43;border-radius:6px;cursor:pointer';
+  document.querySelector('.object-list-wrap')?.prepend(stashToggle);
+  stashToggle.onclick=()=>{stashLayerVisible=!stashLayerVisible;stashToggle.textContent='📦 Схроны: '+(stashLayerVisible?'ВКЛ':'ВЫКЛ');renderMarkers(mapRect())};
+  function focusStash(m){stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();focusMapMarker(m)}
+  function showLinkedStashDetails(m){
+    focusMapMarker(m);
+    const viewer=document.getElementById('markerViewer');
+    document.getElementById('markerViewerTitle').textContent=m.name||'Схрон';
+    document.getElementById('markerViewerType').textContent='📦 Общий схрон отряда';
+    document.getElementById('markerViewerNote').textContent='Владелец: '+(m.stashOwner||'Участник')+'\\nОсталось: '+(m.stashDays??'?')+' дн.\\nПроверил: '+(m.stashCheckedBy||'Участник');
+    document.getElementById('markerViewerRoster').hidden=true;
+    document.getElementById('markerViewerPhotos').replaceChildren();
+    const edit=document.getElementById('markerViewerEdit');edit.textContent='ПЕРЕЙТИ К СХРОНУ';
+    edit.onclick=()=>{viewer.classList.add('hidden');sendHubMessage({kind:'scumStashOpen',id:String(m.id).slice(11)})};
+    document.getElementById('markerViewerClose').onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null};
+    activeDetailMarker=m;viewer.classList.remove('hidden');positionMarkerDetails(m);
+  }
   function renderMarkers(rect){
     markersLayer.style.width=stage.clientWidth+'px';
     markersLayer.style.height=stage.clientHeight+'px';
@@ -1112,7 +1143,9 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       else halo.style.display='none';
     }
     for(const m of markers){
-      if(markerFilters[m.type]===false) continue;
+      const linkedStash=String(m.id).startsWith('stash-post-');
+      if(linkedStash&&!stashLayerVisible)continue;
+      if(!linkedStash&&markerFilters[m.type]===false) continue;
       const el=document.createElement('div');
       el.className='map-marker';
       el.style.left=(rect.left+m.x*rect.size)+'px';
@@ -1131,7 +1164,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
         targetZoom=4.4;
         clampTarget();
         requestCamera();
-        showMarkerDetails(m);
+        if(linkedStash){showLinkedStashDetails(m)}else showMarkerDetails(m);
       });
       markersLayer.appendChild(el);
     }
@@ -1220,6 +1253,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       const img=document.createElement('img');img.src=url;img.loading='lazy';img.alt='Фото '+m.name;
       img.onclick=()=>openMapPhoto(url);gallery.appendChild(img);
     }
+    document.getElementById('markerViewerEdit').textContent='РЕДАКТИРОВАТЬ';
     document.getElementById('markerViewerEdit').onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null;openMarkerPopup(m.x,m.y,m)};
     document.getElementById('markerViewerClose').onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null};
     viewer.classList.remove('hidden');
@@ -1237,7 +1271,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   objectSize.addEventListener('input',()=>objectSizeVal.value=objectSize.value);
   markerType.addEventListener('change',()=>{objectIcon.value=MARKER_META[markerType.value]?.icon||'📍';objectColor.value=MARKER_META[markerType.value]?.color||'#ffffff';renderObjectIcons()});
   function renderObjectList(){
-    const all=getMarkers(),box=document.getElementById('objectList'),q=document.getElementById('objectSearch').value.trim().toLocaleLowerCase('ru');
+    const all=getMarkers().filter(m=>!String(m.id).startsWith('stash-post-')),box=document.getElementById('objectList'),q=document.getElementById('objectSearch').value.trim().toLocaleLowerCase('ru');
     document.getElementById('objectCount').textContent=all.length;
     box.replaceChildren();
     let matches=0;
@@ -1461,6 +1495,12 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   });
 
   stage.addEventListener('click',e=>{
+    if(stashPickPostId){
+      const rect=mapRect(),pt=eventToStagePoint(e);
+      const x=(pt.x-rect.left)/rect.size,y=(pt.y-rect.top)/rect.size;
+      if(x>=0&&x<=1&&y>=0&&y<=1){sendHubMessage({kind:'scumStashPicked',id:stashPickPostId,x,y});stashPickPostId=null;stage.style.cursor='grab';showToast('Сохраняю точку схрона…',3000)}
+      return;
+    }
     if(!addMarkerMode) return;
     const rect=mapRect();
     const pt=eventToStagePoint(e);
