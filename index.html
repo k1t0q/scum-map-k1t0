@@ -1579,6 +1579,8 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   }
 
   stage.addEventListener('pointerdown',e=>{
+    // Existing objects own their clicks. Do not capture their pointers for map dragging.
+    if(e.target.closest('.map-marker')) return;
     if(e.pointerType==='mouse' && e.button!==0) return;
 
     stopInertia();
