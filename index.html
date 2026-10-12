@@ -554,7 +554,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
  <div id="markerViewerType" style="font-size:12px;color:#b8c9d0;margin-bottom:12px"></div>
  <div style="font-size:11px;color:#91a1ab;margin-bottom:5px">КОММЕНТАРИЙ</div>
  <div id="markerViewerNote" style="font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:16px"></div>
- <div class="enemy-nicks-view"><div class="enemy-nicks-title">УЧАСТНИКИ ВРАЖЕСКОГО ОТРЯДА</div><div id="markerViewerNicks" class="enemy-nicks-list"></div></div>
+ <div class="enemy-nicks-view"><div class="enemy-nicks-title">УЧАСТНИКИ ОТРЯДА</div><div id="markerViewerNicks" class="enemy-nicks-list"></div></div>
  <div id="markerViewerPhotos" class="hub-marker-photos" style="margin:8px 0"></div>
  <div class="popup-actions"><button type="button" id="markerViewerEdit" class="save-marker">РЕДАКТИРОВАТЬ</button><button type="button" id="markerViewerClose" class="cancel-marker">ЗАКРЫТЬ</button></div>
 </div>
@@ -573,7 +573,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   <label>Описание / комментарий</label>
   <textarea id="markerNote" placeholder="Описание объекта..."></textarea>
   <div class="enemy-nicks-edit">
-    <div class="enemy-nicks-title">УЧАСТНИКИ ВРАЖЕСКОГО ОТРЯДА</div>
+    <div class="enemy-nicks-title">УЧАСТНИКИ ОТРЯДА</div>
     <div id="markerEditorNicks" class="enemy-nicks-list"></div>
     <div class="enemy-nicks-add"><input id="markerNickInput" maxlength="60" placeholder="Ник противника"><button id="markerNickAdd" type="button">+ ДОБАВИТЬ</button></div>
   </div>
@@ -1202,7 +1202,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     box.replaceChildren();
     for(const m of all.filter(x=>((x.name||'')+' '+(x.note||'')).toLowerCase().includes(q))){
       const b=document.createElement('button');b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
-      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusMapMarker(m)};box.appendChild(b);
+      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusMapMarker(m);showMarkerDetails(m)};box.appendChild(b);
     }
   }
   document.getElementById('objectSearch').addEventListener('input',renderObjectList);
