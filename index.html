@@ -1010,7 +1010,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     const rect=mapRect(), sr=stage.getBoundingClientRect();
     const px=sr.left+rect.left+m.x*rect.size;
     const py=sr.top+rect.top+m.y*rect.size;
-    const vw=viewer.offsetWidth, vh=viewer.offsetHeight, margin=10, gap=14;
+    const vw=viewer.offsetWidth, vh=viewer.offsetHeight, margin=10, gap=38;
     const left=px+gap+vw+margin<=window.innerWidth ? px+gap : px-vw-gap;
     const top=py-vh/2;
     viewer.style.left=Math.max(margin,Math.min(window.innerWidth-vw-margin,left))+'px';
@@ -1054,7 +1054,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     const rect=mapRect(), sr=stage.getBoundingClientRect();
     const x=sr.left+rect.left+nx*rect.size;
     const y=sr.top+rect.top+ny*rect.size;
-    const margin=12, gap=14;
+    const margin=12, gap=38;
     const width=markerPopup.offsetWidth, height=markerPopup.offsetHeight;
     const availableWidth=window.innerWidth;
     let left=x+gap;
