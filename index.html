@@ -480,6 +480,9 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
 .enemy-nicks-view[hidden]{display:none!important}
 #markerRosterPane[hidden],#markerEditPane[hidden],#markerEditPaneRest[hidden]{display:none!important}
 .marker-editor-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+#markerPopup>.marker-editor-tabs{position:sticky;top:-10px;z-index:20;background:#081016;padding:4px 0 9px;margin:0 0 8px;min-height:40px;align-items:stretch}
+#markerPopup>.marker-editor-tabs button{display:flex!important;align-items:center;justify-content:center;min-width:0;white-space:normal;line-height:1.2;visibility:visible!important;opacity:1!important}
+@media(max-width:768px){#markerPopup>.marker-editor-tabs{top:-12px;padding:6px 0 10px}#markerPopup>.marker-editor-tabs button{font-size:10px!important;min-height:42px}}
 .marker-editor-tabs button{padding:9px 4px;background:#182324;color:#bac9ca;border:1px solid #334646;border-radius:7px;font-weight:800;font-size:10px;cursor:pointer}
 .marker-editor-tabs button.active{color:#c4f4ce;background:#193820;border-color:#53ab65}
 #markerRosterPane{min-height:110px}
@@ -1291,6 +1294,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   function openMarkerPopup(nx,ny,existing=null){
     if(existing)focusMapMarker(existing);
     switchMarkerTab(false);
+    editTab.textContent=existing?'РЕДАКТИРОВАТЬ МЕТКУ':'НОВАЯ МЕТКА';
     pendingMarkerNorm={x:nx,y:ny};
     draftEnemyNicks=[...(existing?.enemyNicks||existing?.enemy_nicks||[])];renderEditorNicks();
     editingMarkerId=existing?existing.id:null;
