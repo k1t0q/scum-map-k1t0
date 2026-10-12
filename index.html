@@ -1125,8 +1125,15 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     document.getElementById('markerViewerType').textContent='📦 Общий схрон отряда';
     document.getElementById('markerViewerNote').textContent='Владелец: '+(m.stashOwner||'Участник')+'\nОсталось: '+(m.stashDays??'?')+' дн.\nПроверил: '+(m.stashCheckedBy||'Участник');
     document.getElementById('markerViewerRoster').hidden=true;
-    document.getElementById('markerViewerPhotos').replaceChildren();
+    const gallery=document.getElementById('markerViewerPhotos');gallery.replaceChildren();
+    for(const url of (Array.isArray(m.stashImages)?m.stashImages:[])){
+      if(typeof url!=='string'||!url.startsWith('https://'))continue;
+      const photo=document.createElement('img');photo.src=url;photo.loading='lazy';photo.alt='Фото схрона';
+      photo.onclick=()=>openMapPhoto(url);gallery.appendChild(photo);
+    }
     const edit=document.getElementById('markerViewerEdit');edit.textContent='ПЕРЕЙТИ К СХРОНУ';
+    edit.style.cssText='font-size:10px;padding:6px 8px;min-height:30px;line-height:1.1';
+    document.getElementById('markerViewerClose').style.cssText='font-size:10px;padding:6px 8px;min-height:30px;line-height:1.1';
     edit.onclick=()=>{viewer.classList.add('hidden');sendHubMessage({kind:'scumStashOpen',id:String(m.id).slice(11)})};
     document.getElementById('markerViewerClose').onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null};
     activeDetailMarker=m;viewer.classList.remove('hidden');positionMarkerDetails(m);
