@@ -1,1196 +1,3 @@
-<!doctype html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>SCUM MAP k1t0 v7.0</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090b0e;font-family:Inter,Segoe UI,Arial,sans-serif;color:#fff}
-#stage{position:fixed;left:64px;right:0;top:0;bottom:0;overflow:hidden;background:#090b0e;cursor:grab;touch-action:none;overscroll-behavior:none;transition:left .18s ease}
-
-#stage.drawer-open{left:394px}
-#stage.drag{cursor:grabbing}
-.control-rail{position:fixed;left:0;top:0;bottom:0;width:64px;z-index:27000;background:#0b0e11;border-right:1px solid rgba(255,255,255,.12)}
-#fallback,#tiles{position:absolute;inset:0;overflow:hidden;pointer-events:none}.fb{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:fill;transform-origin:0 0;will-change:transform;user-select:none;-webkit-user-drag:none}
-.tile{position:absolute;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none;will-change:left,top,width,height;image-rendering:auto}
-
-#sectors{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:10000}
-#traders{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:9999}
-.trader-zone{position:absolute;border:3px solid rgba(52,220,92,.92);border-radius:50%;background:rgba(40,210,78,.10);box-shadow:0 0 0 1px rgba(0,0,0,.25),0 0 12px rgba(46,220,88,.22) inset;pointer-events:none}
-.trader-zone::after{content:'';position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;background:#42df67;transform:translate(-50%,-50%);box-shadow:0 0 8px rgba(66,223,103,.95)}
-.sector-cell{box-sizing:border-box;
-  position:absolute;
-  border-right:3px solid rgba(255,255,255,.78);
-  border-bottom:3px solid rgba(255,255,255,.78);
-  pointer-events:none;
-}
-.sector-cell.edge-left{border-left:3px solid rgba(255,255,255,.78)}
-.sector-cell.edge-top{border-top:3px solid rgba(255,255,255,.78)}
-.sector-label{
-  position:absolute;
-  left:10px;
-  top:8px;
-  transform:none;
-  font-weight:900;
-  color:rgba(255,255,255,.80);
-  text-shadow:0 2px 4px rgba(0,0,0,1),0 0 12px rgba(0,0,0,.95);
-  letter-spacing:.06em;
-  white-space:nowrap;
-  user-select:none;
-}
-
-.top{position:fixed;z-index:10;top:14px;left:78px;right:14px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}.brand,.status{background:rgba(8,10,12,.88);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(12px);border-radius:13px;padding:10px 13px;box-shadow:0 8px 24px rgba(0,0,0,.26)}.brand{font-weight:800;letter-spacing:.7px}.brand b{color:#ffb400}.brand small{display:block;margin-top:3px;color:#89939b;font-size:10px;letter-spacing:1.2px}.status{display:flex;gap:8px;align-items:center;font-size:11px;color:#d6dde2}.dot{width:8px;height:8px;border-radius:50%;background:#ffb400;box-shadow:0 0 10px #ffb400}.status.hq .dot{background:#38db75;box-shadow:0 0 10px #38db75}.status.local .dot{background:#ff7668;box-shadow:0 0 10px #ff7668}
-.zoom{position:fixed;z-index:28000;left:10px;top:50%;transform:translateY(-50%);display:grid;gap:7px}.zoom button{width:43px;height:43px;border-radius:11px;border:1px solid rgba(255,255,255,.12);background:rgba(8,10,12,.9);color:#fff;font-size:22px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.2)}.zoom button:hover{background:rgba(28,31,35,.94)}
-.bottom{position:fixed;z-index:10;left:50%;bottom:14px;transform:translateX(-50%);padding:8px 13px;border:1px solid rgba(255,255,255,.11);border-radius:12px;background:rgba(8,10,12,.86);backdrop-filter:blur(10px);font-size:12px;font-weight:700;min-width:230px;text-align:center}.hint{position:fixed;z-index:10;right:14px;bottom:14px;color:#99a2aa;font-size:11px;background:rgba(8,10,12,.76);padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.08)}
-@media(max-width:600px){
-      .status,.hint{display:none}.top{top:8px;left:58px}.bottom{bottom:8px}
-      .control-rail{width:58px}.menu-btn,.zoom{left:7px}
-      #stage{left:58px}#stage.drawer-open{left:min(92vw,358px)}
-      .drawer{left:58px;width:min(300px,calc(92vw - 58px))}
-    }
-
-  .location-box{
-    position:fixed;left:16px;top:104px;z-index:20000;width:310px;
-    background:rgba(6,10,13,.94);border:1px solid rgba(255,255,255,.14);
-    border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);
-    backdrop-filter:blur(10px)
-  }
-  .location-title{font-weight:900;font-size:13px;letter-spacing:.08em;color:#8cff70;margin-bottom:8px}
-  .location-row{display:flex;gap:7px}
-  .location-input{
-    min-width:0;flex:1;background:#0b1116;color:#fff;border:1px solid rgba(255,255,255,.18);
-    border-radius:9px;padding:10px 11px;outline:none;font-size:13px
-  }
-  .location-input:focus{border-color:#74d95a}
-  .location-btn{
-    background:#1b2a1c;color:#a8ff8d;border:1px solid rgba(116,217,90,.5);
-    border-radius:9px;padding:9px 11px;font-weight:800;cursor:pointer
-  }
-  .location-btn:hover{background:#243a25}
-  .location-actions{display:flex;gap:7px;margin-top:7px}
-  .location-actions .location-btn{flex:1;font-size:11px}
-  .location-hint{font-size:10px;color:#87929a;margin-top:7px;line-height:1.35}
-  #locationMarker{position:absolute;inset:0;pointer-events:none;z-index:29999}
-  .loc-pin{
-    position:absolute;width:22px;height:22px;border:3px solid #fff;border-radius:50%;
-    background:#ff3b30;box-shadow:0 0 0 5px rgba(255,59,48,.25),0 2px 12px rgba(0,0,0,.8);
-    transform:translate(-50%,-50%)
-  }
-  .loc-pin:after{
-    content:'';position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;
-    background:#fff;transform:translate(-50%,-50%)
-  }
-  .copy-toast{
-    position:fixed;left:50%;bottom:25px;z-index:30000;transform:translateX(-50%) translateY(20px);
-    background:rgba(5,9,12,.95);border:1px solid rgba(255,255,255,.16);color:#fff;
-    padding:9px 14px;border-radius:10px;opacity:0;transition:.18s;pointer-events:none;font-size:12px
-  }
-  .copy-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-  @media(max-width:700px){
-    .location-box{left:10px;right:10px;top:88px;width:auto}
-  }
-
-
-  .side-panel{
-    position:fixed;right:16px;top:16px;z-index:22000;width:300px;
-    background:rgba(6,10,13,.94);border:1px solid rgba(255,255,255,.14);
-    border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);
-    backdrop-filter:blur(10px);max-height:calc(100vh - 32px);overflow:auto
-  }
-  .panel-title{font-weight:900;font-size:13px;letter-spacing:.08em;color:#8cff70;margin-bottom:8px}
-  .server-tabs{display:flex;gap:7px;margin-bottom:10px}
-  .server-btn{
-    flex:1;background:#0b1116;color:#dbe4e9;border:1px solid rgba(255,255,255,.15);
-    border-radius:9px;padding:8px;font-weight:800;cursor:pointer
-  }
-  .server-btn.active{background:#1b2a1c;color:#a8ff8d;border-color:rgba(116,217,90,.55)}
-  .filter-group{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.10)}
-  .filter-group:first-of-type{margin-top:0;padding-top:0;border-top:0}
-  .filter-head{font-size:11px;color:#95a2aa;font-weight:900;letter-spacing:.08em;margin-bottom:7px}
-  .filter-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;color:#eef4f7}
-  .filter-row input{accent-color:#78dd61}
-  .add-marker-btn{
-    width:100%;margin-top:10px;background:#18341c;color:#b9ffab;
-    border:1px solid rgba(116,217,90,.6);border-radius:10px;padding:10px;font-weight:900;cursor:pointer
-  }
-  .add-marker-btn.active{background:#315f36}
-  .markers-layer{position:absolute;inset:0;pointer-events:none;z-index:40000}
-  .map-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;z-index:1}
-#mapFocusOverlay{position:absolute;left:0;top:0;width:48px;height:48px;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:45000;display:none;border:3px solid var(--pulse-color,#e25555);box-shadow:0 0 0 6px color-mix(in srgb,var(--pulse-color,#e25555) 25%,transparent);background:color-mix(in srgb,var(--pulse-color,#e25555) 15%,transparent)}
-#mapFocusOverlay.active{display:block;animation:focus-ring-pulse 1.4s ease-in-out infinite}
-@keyframes focus-ring-pulse{0%,100%{opacity:.32;box-shadow:0 0 0 5px color-mix(in srgb,var(--pulse-color) 20%,transparent)}50%{opacity:1;box-shadow:0 0 0 23px color-mix(in srgb,var(--pulse-color) 22%,transparent)}}
-.map-marker:not(.object-text) .marker-label{font-size:12px!important;line-height:1.25;padding:4px 7px!important}
-.map-marker.map-focus{z-index:5}
-.map-marker.map-focus::before{content:"";position:absolute;left:50%;top:50%;width:48px;height:48px;border:2px solid var(--object-color,#e25555);background:var(--object-color,#e25555);border-radius:50%;transform:translate(-50%,-50%) scale(.45);opacity:0;pointer-events:none;z-index:-1;animation:map-focus-pulse 1.05s ease-out 3}
-@keyframes map-focus-pulse{0%{transform:translate(-50%,-50%) scale(.45);opacity:.35}75%{opacity:.12}100%{transform:translate(-50%,-50%) scale(2.35);opacity:0}}
-@media(prefers-reduced-motion:reduce){.map-marker.map-focus::before{animation:none}}
-
-  .marker-icon{pointer-events:auto;
-    width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    font-size:21px;border:3px solid #fff;box-shadow:0 0 0 3px rgba(0,0,0,.28),0 4px 14px rgba(0,0,0,.9)
-  }
-  .marker-label{pointer-events:none;
-    position:absolute;left:50%;top:39px;transform:translateX(-50%);
-    background:rgba(4,8,11,.92);border:1px solid rgba(255,255,255,.14);
-    color:#fff;border-radius:7px;padding:3px 6px;font-size:10px;white-space:nowrap
-  }
-  .marker-popup{
-    position:fixed;z-index:35000;width:310px;background:#081016;border:1px solid rgba(255,255,255,.16);
-    border-radius:14px;padding:12px;box-shadow:0 14px 36px rgba(0,0,0,.55)
-  }
-  .marker-popup.hidden{display:none}
-  .marker-popup{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
-  .marker-popup h3{margin:0 0 9px;font-size:14px}
-  .marker-popup label{display:block;font-size:11px;color:#9ca9b1;margin:7px 0 4px}
-  .marker-popup input,.marker-popup select,.marker-popup textarea{
-    width:100%;box-sizing:border-box;background:#0d151b;color:#fff;border:1px solid rgba(255,255,255,.16);
-    border-radius:8px;padding:9px;outline:none
-  }
-  .marker-popup textarea{min-height:70px;resize:vertical}
-  .popup-actions{display:flex;gap:7px;margin-top:10px}
-  .popup-actions button{
-    flex:1;border-radius:8px;padding:9px;border:1px solid rgba(255,255,255,.14);font-weight:800;cursor:pointer
-  }
-  .save-marker{background:#193d1d;color:#baffad}
-  .delete-marker{background:#3a1717;color:#ffb0b0}
-  .cancel-marker{background:#141b20;color:#dbe3e8}
-  @media(max-width:900px){
-    .side-panel{left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:42vh}
-  }
-
-
-
-
-  .menu-btn{
-    position:fixed;left:10px;top:12px;z-index:28000;width:44px;height:44px;
-    border-radius:11px;border:1px solid rgba(255,255,255,.14);
-    background:#12171c;color:#fff;font-size:22px;cursor:pointer;
-    box-shadow:0 8px 22px rgba(0,0,0,.3)
-  }
-  .drawer{
-    position:fixed;left:64px;top:0;bottom:0;z-index:26000;width:330px;
-    background:rgba(7,11,14,.985);border-right:1px solid rgba(255,255,255,.13);
-    box-shadow:none;transform:translateX(-100%);
-    transition:transform .18s ease;overflow:auto;padding:26px 14px 18px
-  }
-  .drawer.open{transform:translateX(0)}
-  .drawer-title{font-weight:900;font-size:17px;letter-spacing:.05em;margin-bottom:14px}
-  .drawer-title b{color:#ffb400}
-  .drawer-section{border-top:1px solid rgba(255,255,255,.10);padding-top:12px;margin-top:12px}
-  .drawer-section:first-of-type{border-top:0;padding-top:0;margin-top:0}
-  .drawer-head{
-    width:100%;border:0;background:transparent;color:#fff;display:flex;
-    justify-content:space-between;align-items:center;padding:4px 0 9px;
-    font-size:12px;font-weight:900;letter-spacing:.08em;cursor:pointer;text-align:left
-  }
-  .drawer-head span:last-child{color:#8cff70}
-  .drawer-body{display:none}
-  .drawer-section.open .drawer-body{display:block}
-  .drawer-section.open .drawer-head span:last-child{transform:rotate(180deg)}
-  
-
-
-  .profile-block{margin-bottom:10px}
-  .profile-row{display:flex;gap:6px;align-items:center}
-  .profile-select{
-    flex:1;min-width:0;background:#0b1116;color:#fff;border:1px solid rgba(255,255,255,.16);
-    border-radius:9px;padding:9px 10px;font-weight:800
-  }
-  .profile-btn{
-    border:1px solid rgba(255,255,255,.14);background:#121a20;color:#fff;
-    border-radius:9px;padding:9px 10px;font-weight:900;cursor:pointer
-  }
-  .profile-btn.add{color:#a8ff8d;border-color:rgba(116,217,90,.45);background:#173019}
-  .profile-btn.del{color:#ffb0b0;border-color:rgba(255,90,90,.35);background:#321818}
-  .profile-hint{font-size:10px;color:#8d9aa2;margin-top:6px;line-height:1.35}
-
-
-  .map-context{
-    position:fixed;z-index:50000;min-width:210px;background:#0a1015;
-    border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:6px;
-    box-shadow:0 12px 28px rgba(0,0,0,.5);display:none
-  }
-  .map-context.show{display:block}
-  .map-context button{
-    width:100%;text-align:left;background:transparent;color:#fff;border:0;
-    border-radius:7px;padding:9px 10px;font-size:12px;font-weight:800;cursor:pointer
-  }
-  .map-context button:hover{background:#162129}
-  .map-context .ctx-coords{
-    font-size:10px;color:#8f9ca4;padding:5px 10px 7px;border-bottom:1px solid rgba(255,255,255,.09);
-    margin-bottom:4px
-  }
-
-
-  .subgroup{border-top:1px solid rgba(255,255,255,.10);margin-top:10px;padding-top:8px}
-  .subgroup-head{width:100%;display:flex;justify-content:space-between;align-items:center;border:0;background:transparent;color:#fff;padding:4px 0 7px;font-size:11px;font-weight:900;letter-spacing:.08em;cursor:pointer;text-align:left}
-  .subgroup-head .chev{color:#8cff70}
-  .subgroup.closed .subgroup-body{display:none}
-  .subgroup.closed .subgroup-head .chev{transform:rotate(180deg)}
-  .std-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;z-index:2}
-  .std-dot{min-width:24px;height:24px;padding:0 5px;border-radius:13px;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.95);background:#162029;color:#fff;font-size:12px;font-weight:900;box-shadow:0 3px 10px rgba(0,0,0,.72)}
-  .std-label{position:absolute;left:50%;top:27px;transform:translateX(-50%);padding:2px 5px;border-radius:6px;background:rgba(5,9,12,.90);border:1px solid rgba(255,255,255,.10);color:#fff;font-size:9px;white-space:nowrap}
-  .std-marker.secret .std-dot{background:#c7ad7b;border-color:#f0dfbd;color:#18130b}
-  .std-marker.bunkers .std-dot{background:#c93636;border-color:#ff8a8a;color:#fff}
-  .std-marker.brenor .std-dot{background:#7d42c7;border-color:#c99cff;color:#fff}
-  .std-marker.killboxes .std-dot{background:#39cfd0;border-color:#a8ffff;color:#062426}
-  .std-marker.secret .std-label{border-color:rgba(240,223,189,.45)}
-  .std-marker.bunkers .std-label{border-color:rgba(255,100,100,.45)}
-  .std-marker.brenor .std-label{border-color:rgba(190,130,255,.45)}
-  .std-marker.killboxes .std-label{border-color:rgba(57,207,208,.70)}
-
-
-  @media (max-width: 768px){
-    html,body{overscroll-behavior:none}
-    body{touch-action:none}
-    .control-rail{
-      width:48px;
-      background:rgba(8,11,14,.96);
-      border-right:1px solid rgba(255,255,255,.10)
-    }
-    #stage{left:48px}
-    #stage.drawer-open{left:min(88vw,308px)}
-    .drawer{
-      left:48px;
-      width:min(260px,calc(88vw - 48px));
-      padding:18px 10px 14px;
-      font-size:12px
-    }
-    .menu-btn{
-      left:6px;top:8px;width:36px;height:36px;border-radius:9px;font-size:18px
-    }
-    .zoom{
-      left:6px;top:50%;gap:5px
-    }
-    .zoom button{
-      width:36px;height:36px;border-radius:9px;font-size:18px
-    }
-    .drawer-title{font-size:15px;margin-bottom:10px}
-    .drawer-head{font-size:11px;padding:4px 0 7px}
-    .filter-row{font-size:11px;padding:5px 0;gap:6px}
-    .filter-row input{transform:scale(.9)}
-    .filter-head{font-size:10px}
-    .profile-select{padding:7px 8px;font-size:11px}
-    .profile-btn{padding:7px 8px;font-size:11px}
-    .add-marker-btn{padding:8px;font-size:11px}
-    .location-row{gap:5px}
-    .location-input{padding:8px 9px;font-size:11px}
-    .location-btn{padding:8px 9px;font-size:10px}
-    .location-hint{font-size:9px}
-    .marker-popup{
-      width:min(88vw,300px);
-      max-height:72vh;
-      overflow:auto;
-      padding:10px
-    }
-    .marker-popup input,.marker-popup select,.marker-popup textarea{
-      font-size:12px;padding:8px
-    }
-    .popup-actions button{padding:8px;font-size:11px}
-    .std-dot{min-width:22px;height:22px;font-size:11px}
-    .std-label{font-size:8px;top:25px}
-    .marker-icon{width:32px;height:32px;font-size:17px}
-    .marker-label{font-size:9px;top:36px}
-    .sector-label{font-size:20px!important}
-    .status,.hint,.bottom{display:none!important}
-    .top{left:58px;right:8px;top:8px}
-    .map-context{
-      min-width:190px;
-      max-width:calc(100vw - 70px);
-      font-size:11px
-    }
-    .map-context button{padding:9px;font-size:11px}
-  }
-
-  @media (max-width: 430px){
-    .drawer{width:min(250px,calc(92vw - 48px))}
-    #stage.drawer-open{left:min(92vw,298px)}
-    .control-rail{width:46px}
-    #stage{left:46px}
-    .menu-btn,.zoom{left:5px}
-    .menu-btn,.zoom button{width:34px;height:34px}
-  }
-
-
-  @media (max-width:768px){
-    #markerPopup #hubMarkerPosts:not([hidden]), #markerPopup #hubMarkerCompose:not([hidden]){display:block!important}
-    #markerPopup .hub-marker-photos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-    #markerPopup .hub-marker-photos img{width:100%;height:56px;object-fit:cover}
-    #markerPopup .hub-marker-posts{margin:9px 0;padding:8px 0}
-    #markerPopup .hub-file-label{display:block}
-    #markerPopup #hubPostFiles{max-width:100%}
-    /* On mobile the map itself has pinch/pan, so desktop zoom controls are unnecessary. */
-    .zoom{display:none!important}
-
-    /* Marker editor becomes a bottom sheet so all fields/actions remain reachable. */
-    .marker-popup{
-      position:fixed!important;
-      left:8px!important;
-      right:8px!important;
-      bottom:8px!important;
-      top:auto!important;
-      width:auto!important;
-      max-width:none!important;
-      max-height:min(78dvh,620px)!important;
-      overflow-y:auto!important;
-      padding:12px!important;
-      border-radius:16px!important;
-      box-sizing:border-box!important;
-      overscroll-behavior:contain;
-      -webkit-overflow-scrolling:touch;
-    }
-    .marker-popup h3{font-size:14px;margin-bottom:8px}
-    .marker-popup label{font-size:11px;margin:7px 0 4px}
-    .marker-popup textarea{
-      min-height:82px!important;
-      max-height:150px;
-      resize:none;
-    }
-    .popup-actions{
-      position:sticky;
-      bottom:-12px;
-      z-index:2;
-      margin:10px -12px -12px!important;
-      padding:10px 12px calc(10px + env(safe-area-inset-bottom))!important;
-      background:rgba(8,16,22,.98);
-      border-top:1px solid rgba(255,255,255,.12);
-      display:grid!important;
-      grid-template-columns:1fr 1fr;
-      gap:7px!important;
-    }
-    .popup-actions button{
-      min-height:42px;
-      padding:9px 6px!important;
-      font-size:11px!important;
-    }
-
-    /* With zoom buttons gone, the left rail only needs the hamburger. */
-    .control-rail{width:46px!important}
-    #stage{left:46px!important}
-    .drawer{left:46px!important}
-    .menu-btn{left:5px!important;top:8px!important}
-    #stage.drawer-open{left:min(92vw,296px)!important}
-  }
-
-
-  #stage,#tiles,#sectors,#traders,#markersLayer,#locationMarker{
-    will-change:transform;
-    backface-visibility:hidden;
-    -webkit-backface-visibility:hidden;
-  }
-  .tile{
-    backface-visibility:hidden;
-    -webkit-backface-visibility:hidden;
-  }
-
-
-  #tiles{
-    position:absolute;
-    inset:0;
-    overflow:hidden;
-    contain:paint;
-    isolation:isolate;
-  }
-
-  /* iOS Safari can leave stale GPU-composited image surfaces behind after
-     rapid zoom changes. Do not force each tile into its own GPU layer there. */
-  @supports (-webkit-touch-callout:none){
-    #tiles{
-      transform:none!important;
-      will-change:auto!important;
-      backface-visibility:visible!important;
-      -webkit-backface-visibility:visible!important;
-    }
-    .tile{
-      transform:none!important;
-      will-change:auto!important;
-      backface-visibility:visible!important;
-      -webkit-backface-visibility:visible!important;
-    }
-  }
-
-
-  #fallbackImg{
-    clip-path:inset(0);
-    -webkit-clip-path:inset(0);
-  }
-  @supports (-webkit-touch-callout:none){
-    #fallbackImg{transform:none!important;will-change:auto!important}
-  }
-
-</style>
-<style>
-html.hub-embed .drawer-title{display:block!important}
-html.hub-embed #status{display:none!important}
-html.hub-embed .hint{display:none!important}
-html.hub-embed #stage{transition:none!important}
-@media(min-width:769px){html.hub-embed #stage.drawer-open{left:64px!important}}
-@media(min-width:769px){html.hub-embed .drawer{width:280px!important}}
-html.hub-embed .profile-block,
-html.hub-embed .scum-default-group,
-html.hub-embed .drawer-section:nth-of-type(2) .subgroup:not(.scum-default-group){display:none!important}
-html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type{border:0!important}
-html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-head{pointer-events:none!important}
-</style><style>
-#markerPopup{width:min(390px,calc(100vw - 24px))!important;max-width:calc(100vw - 24px);overflow-x:hidden!important;box-sizing:border-box}
-#markerPopup .map-object-editor,#markerPopup .object-editor-row,#markerPopup .popup-actions{min-width:0;max-width:100%}
-#markerPopup .object-editor-row>*{min-width:0}
-#markerPopup input[type=range]{width:100%;max-width:100%;min-width:0}
-#markerPopup .popup-actions button{min-width:0}
-.hub-marker-posts{margin-top:12px;padding-top:10px;border-top:1px solid #314139}.hub-marker-posts h4{font-size:12px;margin:0 0 8px}.hub-marker-post{border:1px solid #30443a;border-radius:8px;padding:9px;background:#11211b;margin-bottom:8px}.hub-marker-post small{color:#9ca9b1}.hub-marker-post p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5}.hub-marker-photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.hub-marker-photos img{width:70px;height:60px;object-fit:cover;border-radius:6px;cursor:zoom-in}
-/* Balanced compact desktop dialogs */
-@media (min-width:769px){
- #markerPopup{padding:10px 13px!important;max-height:calc(100dvh - 16px)!important;overflow-x:hidden!important;overflow-y:auto!important}
- #markerPopup h3{margin:0 0 3px!important;font-size:13px!important}
- #markerPopupHint{font-size:10px!important;line-height:1.25!important;margin:0 0 5px!important}
- #markerPopup label{margin:8px 0 4px!important;font-size:11px!important;line-height:1.25!important}
- #markerPopup input:not([type=color]):not([type=range]):not([type=checkbox]):not([type=file]),#markerPopup select{padding:6px 8px!important;min-height:35px!important;font-size:12px!important}
- #markerPopup textarea{min-height:61px!important;height:61px!important;padding:7px!important;resize:none!important}
- #markerPopup .object-icon-grid{grid-template-columns:repeat(9,minmax(0,1fr));gap:4px!important;margin:5px 0!important}
- #markerPopup .object-icon-grid button{min-height:30px!important;font-size:16px!important}
- #markerPopup .object-editor-row{gap:9px!important;margin-top:4px!important}
- #markerPopup input[type=color]{height:28px!important}
- #markerPopup input[type=range]{margin-top:3px!important}
- #markerPopup .object-check{margin:4px 0!important;line-height:1.2!important}
- #markerPopup .hub-marker-posts{margin-top:7px!important;padding-top:7px!important}
- #markerPopup .hub-marker-posts h4{margin:0 0 5px!important;font-size:11px!important}
- #markerPopup .hub-file-label{display:flex!important;align-items:center;gap:7px;flex-wrap:wrap}
- #markerPopup input[type=file]{font-size:10px!important;min-width:0!important;padding:3px!important}
- #markerPopup .hub-upload-hint{font-size:10px!important;line-height:1.25!important;margin-top:4px}
- #markerPopup .hub-marker-photos img{width:52px;height:44px}
- #markerPopup .popup-actions{margin-top:8px!important;gap:6px!important}
- #markerPopup .popup-actions button{padding:7px 5px!important;min-height:33px!important;font-size:11px!important}
- #markerViewer{width:min(270px,calc(100vw - 24px))!important;padding:10px!important}
- #markerViewer h3{font-size:13px!important;margin:0 0 5px!important}
- #markerViewerType{font-size:11px!important;margin-bottom:7px!important}
- #markerViewerNote{font-size:12px!important;line-height:1.35!important;margin-bottom:10px!important}
- #markerViewer .popup-actions{margin-top:7px!important;gap:6px!important}
- #markerViewer .popup-actions button{min-height:30px!important;padding:6px 5px!important;font-size:10px!important}
- #markerViewer .popup-actions{grid-template-columns:1fr 1.4fr!important}
-}
-#mapPhotoLightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:60000;display:flex;align-items:center;justify-content:center;padding:32px;box-sizing:border-box}
-#mapPhotoLightbox.hidden{display:none}
-#mapPhotoFull{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;cursor:zoom-in;transition:transform .2s ease;transform-origin:center center}
-#mapPhotoFull.zoomed{transform:scale(2);cursor:zoom-out}
-#mapPhotoLightbox{overflow:hidden}
-#markerViewerPhotos{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px!important}
-#markerViewerPhotos img{display:block;width:100%!important;height:51px!important;min-width:0;object-fit:cover;border-radius:6px;cursor:zoom-in}
-#mapPhotoClose{position:absolute;right:18px;top:12px;color:#fff;background:#182128;border:1px solid #526168;border-radius:8px;font-size:28px;width:42px;height:42px;cursor:pointer}
-#markerViewerPhotos img{width:64px;height:54px;object-fit:cover;border-radius:6px;cursor:zoom-in}
-.enemy-nicks-view[hidden]{display:none!important}
-#markerRosterPane[hidden],#markerEditPane[hidden],#markerEditPaneRest[hidden]{display:none!important}
-.marker-editor-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
-#markerPopup>.marker-editor-tabs{position:sticky;top:-10px;z-index:20;background:#081016;padding:4px 0 9px;margin:0 0 8px;min-height:40px;align-items:stretch}
-#markerPopup>.marker-editor-tabs button{display:flex!important;align-items:center;justify-content:center;min-width:0;white-space:normal;line-height:1.2;visibility:visible!important;opacity:1!important}
-@media(max-width:768px){#markerPopup>.marker-editor-tabs{top:-12px;padding:6px 0 10px}#markerPopup>.marker-editor-tabs button{font-size:10px!important;min-height:42px}}
-.marker-editor-tabs button{padding:9px 4px;background:#182324;color:#bac9ca;border:1px solid #334646;border-radius:7px;font-weight:800;font-size:10px;cursor:pointer}
-.marker-editor-tabs button.active{color:#c4f4ce;background:#193820;border-color:#53ab65}
-#markerRosterPane{min-height:110px}
-
-.enemy-nicks-edit,.enemy-nicks-view{border-top:1px solid #2a393e;padding-top:9px;margin:10px 0}
-.enemy-nicks-title{font-size:11px;font-weight:800;color:#adbbc3;margin-bottom:7px}
-.enemy-nicks-list{display:flex;flex-wrap:wrap;gap:6px;min-height:22px}
-.enemy-nick{display:inline-flex;align-items:center;gap:6px;padding:5px 7px;border:1px solid #395149;background:#12201b;border-radius:7px;color:#f2f5f4;font-size:12px;overflow-wrap:anywhere}
-.enemy-nick button{background:transparent;color:#eaa5a5;border:0;cursor:pointer;font-size:17px;padding:0 1px;line-height:1}
-.enemy-nicks-add{display:flex;gap:6px;margin-top:8px}
-#markerPopup .enemy-nicks-add input{flex:1;min-width:0;width:auto}
-.enemy-nicks-add button{background:#183721;color:#aef2b5;border:1px solid #3e7950;border-radius:7px;padding:5px 9px;font-size:11px;font-weight:800;cursor:pointer}
-.object-icon-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:5px 0}
-.object-icon-grid button{background:#16231d;border:1px solid #395149;border-radius:5px;color:white;min-height:30px;cursor:pointer}
-.object-icon-grid button.active{border-color:#5ee09b;background:#23503c}
-.object-editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.object-editor-row input[type=color]{height:35px;padding:2px}
-.object-check{display:flex!important;align-items:center;gap:8px}.object-check input{width:auto!important}
-.object-list-wrap{border-top:1px solid #274039;margin-top:15px;padding-top:10px}
-.object-search{width:100%;background:#0d151b;color:#fff;border:1px solid #33413c;border-radius:6px;padding:9px;margin:8px 0}
-.object-list{max-height:220px;overflow:auto}.object-list button{display:block;text-align:left;width:100%;background:#12201b;color:#dcebe2;border:1px solid #284037;border-radius:6px;margin-bottom:5px;padding:8px;cursor:pointer;overflow-wrap:anywhere}
-.map-marker.object-text .marker-label{font-size:inherit}.map-marker.object-text .marker-icon{display:none!important}
-.map-marker.object-text .marker-label{position:relative!important;background:rgba(0,0,0,.65);padding:4px 6px;color:var(--object-color,#fff)!important;display:block!important}
-</style><script>if(new URLSearchParams(location.search).get('hub')==='1')document.documentElement.classList.add('hub-embed');</script></head>
-<body>
-<div class="control-rail"></div>
-
-<button id="menuBtn" class="menu-btn" aria-label="Меню">☰</button>
-<aside id="drawer" class="drawer">
-<div class="drawer-title">SCUM MAP</div>
-  <section class="drawer-section open">
-    <button class="drawer-head"><span>ЛОКАЦИЯ</span><span>⌃</span></button>
-    <div class="drawer-body">
-      <div class="location-row"><input id="locationInput" class="location-input" placeholder="Вставь X Y Z или #Teleport..." autocomplete="off"><button id="locationShow" class="location-btn">ПОКАЗАТЬ</button></div>
-      <div class="location-actions"><button id="copyXYZ" class="location-btn">КОПИРОВАТЬ XYZ</button></div>
-      <div class="location-hint">Вставь координаты из SCUM → карта покажет точку. ПКМ по карте → скопировать координаты.</div>
-    </div>
-  </section>
-  <section class="drawer-section open">
-    <button class="drawer-head"><span>МЕТКИ</span><span>⌃</span></button>
-    <div class="drawer-body">
-      
-<div class="profile-block">
-  <div class="filter-head">ПРОФИЛЬ / СЕРВЕР</div>
-  <div class="profile-row">
-    <select id="profileSelect" class="profile-select"></select>
-    <button id="addProfileBtn" class="profile-btn add" title="Добавить профиль">＋</button>
-    <button id="deleteProfileBtn" class="profile-btn del" title="Удалить профиль">−</button>
-  </div>
-  <div class="profile-hint">Все метки сохраняются отдельно внутри выбранного профиля.</div>
-</div>
-<div class="subgroup scum-default-group">
-        <button class="subgroup-head" type="button"><span>SCUM</span><span class="chev">⌃</span></button>
-        <div class="subgroup-body">
-          <label class="filter-row"><input type="checkbox" data-scum-filter="secret"> 🟤 Секретки <span style="margin-left:auto;color:#8f9ca4">0/11</span></label>
-          <label class="filter-row"><input type="checkbox" data-scum-filter="bunkers"> 🔴 Бункеры <span style="margin-left:auto;color:#8f9ca4">0/8</span></label>
-          <label class="filter-row"><input type="checkbox" data-scum-filter="brenor"> 🟣 Бренор <span style="margin-left:auto;color:#8f9ca4">0/4</span></label>
-          <label class="filter-row"><input type="checkbox" data-scum-filter="killboxes"> <span class="killbox-list-dot" style="color:#39cfd0;font-size:16px;line-height:10px">●</span> Киллбоксы <span class="filter-count" style="margin-left:auto;color:#8f9ca4">0/12</span></label>
-          
-          
-        </div>
-      </div>
-
-      <div class="subgroup">
-        <button class="subgroup-head" type="button"><span>НАША МЕТКА</span><span class="chev">⌃</span></button>
-        <div class="subgroup-body">
-          <label class="filter-row"><input type="checkbox" data-filter="base" checked> 🏠 Базы</label>
-          <label class="filter-row"><input type="checkbox" data-filter="stash" checked> 📦 Схроны</label>
-          <label class="filter-row"><input type="checkbox" data-filter="enemy" checked> 🔴 Вражеские базы</label>
-          <label class="filter-row"><input type="checkbox" data-filter="vehicle" checked> 🚗 Транспорт</label>
-        </div>
-      </div>
-      
-      <button id="addMarkerBtn" class="add-marker-btn">＋ ДОБАВИТЬ МЕТКУ</button>
-      <div class="object-list-wrap"><div class="filter-head">ОБЪЕКТЫ (<span id="objectCount">0</span>)</div><input id="objectSearch" class="object-search" placeholder="Поиск по названию, описанию"><div id="objectList" class="object-list"></div></div>
-    </div>
-  </section>
-</aside>
-<div id="markerViewer" class="marker-popup hidden" style="max-height:calc(100dvh - 24px);overflow:auto;transform:none;width:min(310px,calc(100vw - 28px))">
- <h3 id="markerViewerTitle"></h3>
- <div id="markerViewerType" style="font-size:12px;color:#b8c9d0;margin-bottom:12px"></div>
- <div style="font-size:11px;color:#91a1ab;margin-bottom:5px">КОММЕНТАРИЙ</div>
- <div id="markerViewerNote" style="font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:16px"></div>
- <div class="enemy-nicks-view" id="markerViewerRoster" hidden><div class="enemy-nicks-title">УЧАСТНИКИ ОТРЯДА</div><div id="markerViewerNicks" class="enemy-nicks-list"></div></div>
- <div id="markerViewerPhotos" class="hub-marker-photos" style="margin:8px 0"></div>
- <div class="popup-actions"><button type="button" id="markerViewerEdit" class="save-marker">РЕДАКТИРОВАТЬ</button><button type="button" id="markerViewerClose" class="cancel-marker">ЗАКРЫТЬ</button></div>
-</div>
-<div id="mapPhotoLightbox" class="hidden" role="dialog" aria-label="Просмотр фото"><button id="mapPhotoClose" type="button" aria-label="Закрыть">×</button><img id="mapPhotoFull" alt="Фото базы"></div>
-<div id="markerPopup" class="marker-popup hidden">
-  <div class="marker-editor-tabs"><button type="button" id="markerEditTab" class="active">РЕДАКТИРОВАТЬ МЕТКУ</button><button type="button" id="markerRosterTab">УЧАСТНИКИ ОТРЯДА</button></div>
-  <div id="markerEditPane">
-  <h3 id="markerPopupTitle">Новая метка</h3><div id="markerPopupHint" style="font-size:10px;color:#89969e;margin:-4px 0 7px"></div>
-  <label>Тип</label>
-  <select id="markerType">
-    <option value="base">🏠 Вражеская база</option>
-    <option value="stash">📦 Схрон</option>
-    <option value="vehicle">🚗 Транспорт</option>
-    <option value="marker">📍 Маркер</option>
-  </select>
-  <label>Название</label>
-  <input id="markerName" placeholder="Например: Схрон у дороги">
-  <label>Описание / комментарий</label>
-  <textarea id="markerNote" placeholder="Описание объекта..."></textarea>
-  </div><div id="markerRosterPane" hidden><div class="enemy-nicks-edit">
-    <div class="enemy-nicks-title">УЧАСТНИКИ ОТРЯДА</div>
-    <div id="markerEditorNicks" class="enemy-nicks-list"></div>
-    <div class="enemy-nicks-add"><input id="markerNickInput" maxlength="60" placeholder="Ник противника"><button id="markerNickAdd" type="button">+ ДОБАВИТЬ</button></div>
-  </div>
-  </div><div id="markerEditPaneRest"><div class="map-object-editor">
-    <label>Иконка
-      <div id="objectIconGrid" class="object-icon-grid"></div>
-      <input id="objectIcon" maxlength="8" placeholder="Свой символ / эмодзи">
-    </label>
-    <div class="object-editor-row"><label>Цвет<input id="objectColor" type="color" value="#e25555"></label><label>Размер <output id="objectSizeVal">32</output><input id="objectSize" type="range" min="14" max="70" value="32"></label></div>
-    <input id="objectShowLabel" type="checkbox" checked hidden>
-    <input id="objectLocked" type="checkbox" hidden>
-  </div>
-  <div id="hubMarkerPosts" class="hub-marker-posts" hidden></div>
-  <div id="hubMarkerCompose" class="hub-marker-posts">
-    <h4>ФОТОГРАФИИ (до 5)</h4>
-    <div id="hubDraftPhotos" class="hub-marker-photos"></div>
-    <label class="hub-file-label">ПРИКРЕПИТЬ ФОТО
-      <input id="hubPostFiles" type="file" accept="image/*" multiple>
-    </label>
-    <div class="hub-upload-hint">Ctrl+V — вставить скриншот из буфера</div>
-  </div>
-  </div><div class="popup-actions">
-    <button id="saveMarker" class="save-marker">СОХРАНИТЬ</button>
-    <button id="deleteMarker" class="delete-marker">УДАЛИТЬ</button>
-    <button id="cancelMarker" class="cancel-marker">ОТМЕНА</button>
-  </div>
-</div>
-
-
-<div id="mapContext" class="map-context">
-  <div id="ctxCoords" class="ctx-coords"></div>
-  <button id="ctxCopyLocation">📍 Копировать Location</button>
-  <button id="ctxCopyTeleport">↗ Копировать #Teleport</button>
-</div>
-
-<div id="copyToast" class="copy-toast"></div>
-
-<div id="stage">
-  <div id="locationMarker"></div>
-  <div id="markersLayer" class="markers-layer"></div><div id="mapFocusOverlay" aria-hidden="true"></div>
-  <div id="fallback"><img id="fallbackImg" class="fb" src="scum_map_fallback.png" alt="SCUM map fallback"></div>
-  <div id="tiles"></div>
-  <div id="traders"></div>
-  <div id="sectors"></div>
-</div>
-<div class="top"><div></div><div id="status" class="status local"><span class="dot"></span><span id="statusText">Подключаю HD-тайлы…</span></div></div>
-<div class="zoom"><button id="plus" aria-label="Приблизить">＋</button><button id="minus" aria-label="Отдалить">−</button><button id="home" aria-label="Вся карта">⌂</button></div>
-<div id="bottom" class="bottom">100% · HD</div><div class="hint">Колесо — плавный зум · ЛКМ — перемещение</div>
-<script>
-(()=>{
-  const stage=document.getElementById('stage');
-
-  const drawer=document.getElementById('drawer');
-  const menuBtn=document.getElementById('menuBtn');
-
-  function setDrawer(open){
-    const mobile=window.matchMedia('(max-width: 768px)').matches;
-    const keepX=cx, keepY=cy, keepZoom=zoom;
-
-    drawer.classList.toggle('open',open);
-    stage.classList.toggle('drawer-open',open);
-    menuBtn.textContent=open?'×':'☰';
-    menuBtn.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');
-
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      // Opening or closing the drawer must never reset the map camera.
-      cx=keepX; cy=keepY; zoom=keepZoom;
-      clampCenter();
-      syncTargets();
-      renderTiles();
-      schedule();
-      // Recalculate once the layout has settled after the panel width changes.
-      requestAnimationFrame(()=>{clampCenter();syncTargets();renderTiles();schedule();});
-    }));
-  }
-  menuBtn.addEventListener('click',()=>setDrawer(!drawer.classList.contains('open')));
-  document.querySelectorAll('.drawer-head').forEach(btn=>{
-    btn.addEventListener('click',()=>btn.closest('.drawer-section').classList.toggle('open'));
-  });
-
-
-
-  const locationInput=document.getElementById('locationInput');
-  const locationMarker=document.getElementById('locationMarker');
-  const copyToast=document.getElementById('copyToast');
-  let selectedLocation=null;
-  const mapContext=document.getElementById('mapContext');
-  const ctxCoords=document.getElementById('ctxCoords');
-  let contextLocation=null;
-  const markersLayer=document.getElementById('markersLayer');
-  const markerPopup=document.getElementById('markerPopup');
-  const markerType=document.getElementById('markerType');
-  const markerName=document.getElementById('markerName');
-  const markerNote=document.getElementById('markerNote');
-  const deleteMarkerBtn=document.getElementById('deleteMarker');
-  const addMarkerBtn=document.getElementById('addMarkerBtn');
-
-  const DEFAULT_PROFILES=['FURY','REDSCUM'];
-
-  function loadProfiles(){
-    try{
-      const saved=JSON.parse(localStorage.getItem('scumMapProfiles')||'null');
-      if(Array.isArray(saved) && saved.length) return saved;
-    }catch(e){}
-    localStorage.setItem('scumMapProfiles',JSON.stringify(DEFAULT_PROFILES));
-    return [...DEFAULT_PROFILES];
-  }
-
-  let profiles=loadProfiles();
-  let currentProfile=localStorage.getItem('scumMapCurrentProfile') || profiles[0];
-  if(!profiles.includes(currentProfile)) currentProfile=profiles[0];
-
-  let addMarkerMode=false;
-  let editingMarkerId=null;
-  let pendingMarkerNorm=null;
-  let markerFilters={base:true,stash:true,enemy:true,vehicle:true,marker:true,text:true};
-
-  const MARKER_META={
-    base:{icon:'🏠',color:'#57c46b'},
-    stash:{icon:'📦',color:'#d4a94b'},
-    enemy:{icon:'⚠️',color:'#e25555'},
-    vehicle:{icon:'🚗',color:'#4aa5e6'},marker:{icon:'📍',color:'#e25555'},text:{icon:'T',color:'#ffffff'}};
-  const SCUM_MARKERS={
-    brenor:[
-      {name:'Бренор C4',x:446131.531,y:263265.812,z:18232.553},
-      {name:'Бренор A3',x:230133.25,y:-447074.875,z:9235.462},
-      {name:'Бренор D1',x:-537997.875,y:540056.062,z:80959.688},
-      {name:'Бренор A1',x:-348342.344,y:-469169.062,z:3927.684}
-    ],
-    killboxes:[
-      {name:'Киллбокс D3',x:133129.219,y:544537,z:24575.086},
-      {name:'Киллбокс D1',x:-548275.188,y:547939.688,z:80110.664},
-      {name:'Киллбокс D0',x:-878990.812,y:596769.125,z:61563.297},
-      {name:'Киллбокс C4',x:449693.031,y:275679.438,z:17383.527},
-      {name:'Киллбокс C1',x:-398367.781,y:232425,z:58959.09},
-      {name:'Киллбокс B4',x:452577.562,y:-12942.583,z:11609.676},
-      {name:'Киллбокс B0',x:-806685.562,y:-85685.773,z:33957.102},
-      {name:'Киллбокс A2',x:-48060.762,y:-319135.75,z:16356.677},
-      {name:'Киллбокс A3',x:224212.719,y:-435554.75,z:8386.437},
-      {name:'Киллбокс A1',x:-335773.375,y:-472050.719,z:3078.659},
-      {name:'Киллбокс Z2',x:-194499.453,y:-645343.188,z:4495.653},
-      {name:'Киллбокс Z0',x:-691364.812,y:-799195.688,z:10126.656}
-    ],
-    secret:[
-      {name:'Секретка A4',x:450016.156,y:-402649.25,z:7434.699},
-      {name:'Секретка D4',x:402932.781,y:554956.5,z:15534.392},
-      {name:'Секретка D2',x:-242956.047,y:568935.312,z:71601.484},
-      {name:'Секретка C0',x:-899176.688,y:229973.375,z:48515.059},
-      {name:'Секретка C3',x:190006.531,y:294281.531,z:39713.941},
-      {name:'Секретка C2',x:-218646.906,y:194222.062,z:75139.172},
-      {name:'Секретка B3',x:238800.609,y:-90780.203,z:30336.971},
-      {name:'Секретка B2',x:-39812,y:-196609.594,z:31515.674},
-      {name:'Секретка B1',x:-585821.625,y:-260226.312,z:16696.475},
-      {name:'Секретка Z3',x:30755.055,y:-806290.812,z:10775.657},
-      {name:'Секретка Z1',x:-564969.25,y:-723961.875,z:14376.868}
-    ],
-    bunkers:[
-      {name:'Бункер D3',x:142357.469,y:547270.25,z:24667.322},
-      {name:'Бункер D0',x:-871793.312,y:596998.5,z:62987.523},
-      {name:'Бункер C1',x:-393522.125,y:217034.812,z:59273.961},
-      {name:'Бункер B4',x:443067.156,y:-13608.685,z:11926.664},
-      {name:'Бункер B0',x:-808129.062,y:-89720.773,z:35386.102},
-      {name:'Бункер A2',x:-40706.711,y:-325085.031,z:16222.469},
-      {name:'Бункер Z2',x:-202051.969,y:-645720.688,z:5469.082},
-      {name:'Бункер Z0',x:-700948.375,y:-792417.375,z:10660.246}
-    ],
-  };
-  const scumFilters={brenor:false,secret:false,bunkers:false,killboxes:false,traders:true};
-
-  const tilesEl=document.getElementById('tiles');
-  const sectorsEl=document.getElementById('sectors');
-  const tradersEl=document.getElementById('traders');
-  const fb=document.getElementById('fallbackImg');
-  const status=document.getElementById('status');
-  const statusText=document.getElementById('statusText');
-  const bottom=document.getElementById('bottom');
-
-  const TILE=1280;
-  const MIN_LEVEL=2;
-  const MAX_LEVEL=6;
-  const CDN='https://cdn.scum-map.com/tiles/scum/island/v50.0.2025.06.17-scum-1.0/regular';
-
-  let zoom=1;             // 1 = whole map fitted
-  const MAX_ZOOM=32;
-  let cx=.5, cy=.5;       // normalized map center
-  let drag=false,lastX=0,lastY=0;
-  let renderRAF=0;
-  let successfulTiles=0,failedTiles=0;
-  const tileNodes=new Map();
-  let activeLevel=MIN_LEVEL;
-  let pendingLevel=null;
-  let pendingWanted=new Set();
-  let pendingLoaded=new Set();
-
-  const IS_IOS_SAFARI=/iP(ad|hone|od)/.test(navigator.userAgent) ||
-    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-  let lastIosLevel=activeLevel;
-
-
-  const SECTOR_ROWS=['D','C','B','A','Z'];
-  const SECTOR_COLS=['4','3','2','1','0'];
-  const sectorNodes=[];
-  for(let r=0;r<5;r++){
-    for(let c=0;c<5;c++){
-      const cell=document.createElement('div');
-      cell.className='sector-cell'+(c===0?' edge-left':'')+(r===0?' edge-top':'');
-      const label=document.createElement('div');
-      label.className='sector-label';
-      label.textContent=SECTOR_ROWS[r]+SECTOR_COLS[c];
-      cell.appendChild(label);
-      sectorsEl.appendChild(cell);
-      sectorNodes.push({cell,label,r,c});
-    }
-  }
-
-  // Permanent trader safe-zones. Positions are tied to the SCUM map, not to screen pixels.
-  // A0, B4, C2 and Z3 are the four trader/outpost safe zones.
-  const TRADERS=[
-    {name:'A0 / Z0 Outpost', x:0.8072, y:0.7722, r:0.0303},
-    {name:'Z3 / Z2 Outpost', x:0.3981, y:0.8514, r:0.0303},
-    {name:'B4 Outpost',      x:0.0316, y:0.5554, r:0.0303},
-    {name:'C2 / C1 Outpost', x:0.5018, y:0.2234, r:0.0303}
-  ];
-  const traderNodes=TRADERS.map(t=>{
-    const el=document.createElement('div');
-    el.className='trader-zone';
-    el.title='Trader '+t.name;
-    tradersEl.appendChild(el);
-    return {el,...t};
-  });
-
-
-  function fitSize(){return Math.min(stage.clientWidth,stage.clientHeight)}
-  function mapRect(){
-    const size=fitSize()*zoom;
-    return {size,left:stage.clientWidth/2-cx*size,top:stage.clientHeight/2-cy*size};
-  }
-  function clampCenter(){
-    const size=fitSize()*zoom,w=stage.clientWidth,h=stage.clientHeight;
-    if(size<=w) cx=.5; else {const half=w/(2*size);cx=Math.max(half,Math.min(1-half,cx));}
-    if(size<=h) cy=.5; else {const half=h/(2*size);cy=Math.max(half,Math.min(1-half,cy));}
-  }
-  function levelForZoom(){
-    const raw=MIN_LEVEL+Math.ceil(Math.log2(Math.max(1,zoom)));
-    return Math.max(MIN_LEVEL,Math.min(MAX_LEVEL,raw));
-  }
-  function tileURL(level,x,y){return `${CDN}/${level}/${x}_${y}.webp`}
-
-  function renderFallback(rect){
-    fb.style.width=rect.size+'px';
-    fb.style.height=rect.size+'px';
-    fb.style.left=rect.left+'px';
-    fb.style.top=rect.top+'px';
-  }
-
-
-  function renderTraders(rect){
-    if(!scumFilters.traders){tradersEl.innerHTML='';return;}
-    for(const t of traderNodes){
-      const d=rect.size*t.r*2;
-      t.el.style.width=d+'px';
-      t.el.style.height=d+'px';
-      t.el.style.left=(rect.left+rect.size*t.x-d/2)+'px';
-      t.el.style.top=(rect.top+rect.size*t.y-d/2)+'px';
-      // Keep the ring strong enough to remain visible when zoomed in.
-      const bw=Math.max(2,Math.min(5,2.2+Math.log2(Math.max(1,zoom))*.55));
-      t.el.style.borderWidth=bw+'px';
-    }
-  }
-
-  function renderSectors(rect){
-    const cellSize=rect.size/5;
-    const labelPx=Math.max(24,Math.min(58,cellSize*0.085));
-    const pad=10;
-
-    sectorsEl.style.display='block';
-    sectorsEl.style.visibility='visible';
-    sectorsEl.style.opacity='1';
-
-    for(const s of sectorNodes){
-      const left=rect.left+s.c*cellSize;
-      const top=rect.top+s.r*cellSize;
-      const right=left+cellSize;
-      const bottomEdge=top+cellSize;
-
-      s.cell.style.left=left+'px';
-      s.cell.style.top=top+'px';
-      s.cell.style.width=cellSize+'px';
-      s.cell.style.height=cellSize+'px';
-      s.cell.style.borderColor='rgba(255,255,255,.78)';
-      s.cell.style.display='block';
-      s.cell.style.visibility='visible';
-      s.cell.style.opacity='1';
-
-      const visibleLeft=Math.max(left,0);
-      const visibleTop=Math.max(top,0);
-      const visibleRight=Math.min(right,stage.clientWidth);
-      const visibleBottom=Math.min(bottomEdge,stage.clientHeight);
-
-      s.label.style.fontSize=labelPx+'px';
-      s.label.style.opacity='1';
-      const visible=(visibleRight>visibleLeft && visibleBottom>visibleTop);
-      s.label.style.display=visible ? 'block' : 'none';
-
-      if(visible){
-        const absoluteX=visibleLeft+pad;
-        const absoluteY=visibleTop+pad;
-        s.label.style.left=(absoluteX-left)+'px';
-        s.label.style.top=(absoluteY-top)+'px';
-      }
-    }
-  }
-
-
-  // SCUM world coordinates. This mapping is aligned to the full square map.
-  // X increases east, Y increases north.
-  const WORLD_X_LEFT=619646.8573;
-  const WORLD_X_RIGHT=-905369.0266;
-  const WORLD_Y_TOP=619659.7258;
-  const WORLD_Y_BOTTOM=-904357.527;
-
-  function worldToNorm(x,y){
-    return {
-      x:(WORLD_X_LEFT-x)/(WORLD_X_LEFT-WORLD_X_RIGHT),
-      y:(WORLD_Y_TOP-y)/(WORLD_Y_TOP-WORLD_Y_BOTTOM)
-    };
-  }
-  function normToWorld(nx,ny){
-    return {
-      x:WORLD_X_LEFT-nx*(WORLD_X_LEFT-WORLD_X_RIGHT),
-      y:WORLD_Y_TOP-ny*(WORLD_Y_TOP-WORLD_Y_BOTTOM)
-    };
-  }
-  function parseLocation(text){
-    if(!text) return null;
-    const clean=text.replace(/,/g,'.');
-    const mx=clean.match(/X\s*[:=]?\s*(-?\d+(?:\.\d+)?)/i);
-    const my=clean.match(/Y\s*[:=]?\s*(-?\d+(?:\.\d+)?)/i);
-    const mz=clean.match(/Z\s*[:=]?\s*(-?\d+(?:\.\d+)?)/i);
-    if(mx&&my) return {x:+mx[1],y:+my[1],z:mz?+mz[1]:0};
-    const nums=(clean.match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);
-    if(nums.length>=2) return {x:nums[0],y:nums[1],z:nums[2]||0};
-    return null;
-  }
-  function showToast(text){
-    copyToast.textContent=text;
-    copyToast.classList.add('show');
-    clearTimeout(showToast.t);
-    showToast.t=setTimeout(()=>copyToast.classList.remove('show'),1400);
-  }
-  async function copyText(text){
-    try{await navigator.clipboard.writeText(text);showToast('Скопировано: '+text)}
-    catch(e){
-      const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);
-      ta.select();document.execCommand('copy');ta.remove();showToast('Скопировано: '+text);
-    }
-  }
-  function renderLocation(rect){
-    locationMarker.innerHTML='';
-    if(!selectedLocation) return;
-    const n=worldToNorm(selectedLocation.x,selectedLocation.y);
-    if(n.x<0||n.x>1||n.y<0||n.y>1) return;
-    const pin=document.createElement('div');
-    pin.className='loc-pin';
-    pin.style.left=(rect.left+n.x*rect.size)+'px';
-    pin.style.top=(rect.top+n.y*rect.size)+'px';
-    locationMarker.appendChild(pin);
-  }
-  function focusLocation(loc){
-    const n=worldToNorm(loc.x,loc.y);
-    if(n.x<0||n.x>1||n.y<0||n.y>1){
-      showToast('Точка вне карты');
-      return;
-    }
-
-    selectedLocation=loc;
-
-    // ~200% zoom and center directly on the requested map point.
-    zoom=3.5;
-    cx=n.x;
-    cy=n.y;
-    clampCenter();
-
-    // Force a complete redraw NOW, not on the next wheel/drag event.
-    if(renderRAF){
-      cancelAnimationFrame(renderRAF);
-      renderRAF=0;
-    }
-    renderTiles();
-  }
-  document.getElementById('locationShow').addEventListener('click',()=>{
-    const loc=parseLocation(locationInput.value);
-    if(!loc){showToast('Не удалось распознать координаты');return}
-    focusLocation(loc);
-  });
-  locationInput.addEventListener('keydown',e=>{
-    if(e.key==='Enter') document.getElementById('locationShow').click();
-  });
-  document.getElementById('copyXYZ').addEventListener('click',()=>{
-    if(!selectedLocation){showToast('Сначала выбери точку');return}
-    copyText(`X=${selectedLocation.x.toFixed(1)} Y=${selectedLocation.y.toFixed(1)} Z=${(selectedLocation.z||0).toFixed(1)}`);
-  });
-
-  stage.addEventListener('contextmenu',e=>{
-    e.preventDefault();
-    const rect=mapRect();
-    const pt=eventToStagePoint(e);
-    const nx=(pt.x-rect.left)/rect.size;
-    const ny=(pt.y-rect.top)/rect.size;
-    if(nx<0||nx>1||ny<0||ny>1){
-      mapContext.classList.remove('show');
-      return;
-    }
-
-    const w=normToWorld(nx,ny);
-    contextLocation={x:w.x,y:w.y,z:0};
-    ctxCoords.textContent=`X=${w.x.toFixed(1)}  Y=${w.y.toFixed(1)}  Z=0`;
-
-    const menuW=220, menuH=120;
-    const x=Math.min(window.innerWidth-menuW-8,Math.max(8,e.clientX));
-    const y=Math.min(window.innerHeight-menuH-8,Math.max(8,e.clientY));
-    mapContext.style.left=x+'px';
-    mapContext.style.top=y+'px';
-    mapContext.classList.add('show');
-  });
-
-
-  function safeProfileKey(name){
-    return encodeURIComponent(String(name||'default').trim().toLowerCase());
-  }
-  
-  function eventToStagePoint(e){
-    const sr=stage.getBoundingClientRect();
-    return {x:e.clientX-sr.left, y:e.clientY-sr.top};
-  }
-
-  function markerStoreKey(){return 'scumMapMarkersProfile_'+safeProfileKey(currentProfile)}
-  const hubSharedMode=document.documentElement.classList.contains('hub-embed');
-  let sharedMarkers=[],sharedReady=false;
-  const allowedHubOrigins=new Set(['https://k1t0q.github.io','https://scumhub.layero.app','https://scum-squad-hub.layero.app']);
-  let hubParentOrigin=null;
-  function sendHubMessage(msg){if(hubSharedMode&&hubParentOrigin)parent.postMessage(msg,hubParentOrigin)}
-  function getMarkers(){
-    if(hubSharedMode) return sharedMarkers.length||sharedReady?sharedMarkers:readLocalBackup();
-    try{return JSON.parse(localStorage.getItem(markerStoreKey())||'[]')}
-    catch(e){return []}
-  }
-  function readLocalBackup(){try{return JSON.parse(localStorage.getItem('scumHubSharedMapBackup')||'[]')}catch{return []}}
-  function setMarkers(arr){
-    if(hubSharedMode){sharedMarkers=arr;localStorage.setItem('scumHubSharedMapBackup',JSON.stringify(arr));return}
-    localStorage.setItem(markerStoreKey(),JSON.stringify(arr));
-  }
-  function notifyHub(action,marker,id){
-    if(hubSharedMode)sendHubMessage({kind:'scumMapMarkerAction',action,marker,id});
-  }
-  window.addEventListener('message',e=>{
-    if(!hubSharedMode||!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumMapSharedMarkers')return;
-    if(!Array.isArray(e.data.markers))return;
-    const fromServer=e.data.markers.map(m=>({...m,showLabel:m.show_label,locked:m.locked}));
-    sharedMarkers=fromServer.length?fromServer:readLocalBackup();
-    if(fromServer.length)localStorage.setItem('scumHubSharedMapBackup',JSON.stringify(fromServer));
-    sharedReady=true;
-    renderObjectList();renderMarkers(mapRect());schedule();
-  });
-  function sendMapReady(){
-      let local=[];try{
-        for(const key of Object.keys(localStorage)){
-          if(key.startsWith('scumMapMarkersProfile_')){
-            const v=JSON.parse(localStorage.getItem(key)||'[]');
-            if(Array.isArray(v))local.push(...v);
-          }
-        }
-      }catch(e){}
-      local.push(...readLocalBackup());
-      local=[...new Map(local.filter(m=>m?.id).map(m=>[m.id,m])).values()];
-      sendHubMessage({kind:'scumMapReady',localMarkers:local});
-  }
-  window.addEventListener('message',e=>{
-    if(!hubSharedMode||e.source!==parent||!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumMapParentHello')return;
-    hubParentOrigin=e.origin;
-    sendMapReady();
-  });
-  function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-
-
-  function renderScumMarkers(rect){
-    const kinds=[['brenor','☠'],['secret','S'],['bunkers','B'],['killboxes','K']];
-    for(const [kind,symbol] of kinds){
-      if(!scumFilters[kind]) continue;
-      for(const m of SCUM_MARKERS[kind]){
-        const n=worldToNorm(m.x,m.y);
-        if(n.x<0||n.x>1||n.y<0||n.y>1) continue;
-        const el=document.createElement('div');
-        el.className='std-marker '+kind;
-        el.style.left=(rect.left+n.x*rect.size)+'px';
-        el.style.top=(rect.top+n.y*rect.size)+'px';
-        el.title=m.name;
-        el.innerHTML=`<div class="std-dot">${symbol}</div><div class="std-label">${escapeHtml(m.name)}</div>`;
-        el.addEventListener('click',e=>{
-          e.stopPropagation();
-          const z=(m.z ?? 0);
-          selectedLocation={x:m.x,y:m.y,z:z};
-          locationInput.value=`X=${m.x} Y=${m.y} Z=${z}`;
-          copyText(`#Teleport ${m.x} ${m.y} ${z}`);
-          showToast(m.name+' · #Teleport скопирован');
-          renderLocation(mapRect());
-        });
-        markersLayer.appendChild(el);
-      }
-    }
-  }
-
-  let focusedMarkerId=null,focusUntil=0;
-  function renderMarkers(rect){
-    markersLayer.style.width=stage.clientWidth+'px';
-    markersLayer.style.height=stage.clientHeight+'px';
-    markersLayer.innerHTML='';
-    const markers=getMarkers();
-    const halo=document.getElementById('mapFocusOverlay');
-    if(focusedMarkerId){
-      const fm=markers.find(m=>m.id===focusedMarkerId);
-      if(fm){halo.style.left=(rect.left+fm.x*rect.size)+'px';halo.style.top=(rect.top+fm.y*rect.size)+'px';}
-      else halo.style.display='none';
-    }
-    for(const m of markers){
-      if(markerFilters[m.type]===false) continue;
-      const el=document.createElement('div');
-      el.className='map-marker';
-      el.style.left=(rect.left+m.x*rect.size)+'px';
-      el.style.top=(rect.top+m.y*rect.size)+'px';
-      const meta=MARKER_META[m.type]||MARKER_META.marker;
-      el.classList.toggle('object-text',m.type==='text');
-      el.classList.toggle('map-focus',m.id===focusedMarkerId);
-      el.style.setProperty('--object-color',m.color||meta.color);
-      el.style.fontSize=(m.size||24)+'px';
-      el.innerHTML=`<div class="marker-icon" style="background:${m.color||meta.color};width:${m.size||32}px;height:${m.size||32}px;font-size:${Math.round((m.size||32)*.5)}px">${escapeHtml(m.icon||meta.icon)}</div>${(m.showLabel!==false||m.type==='text')&&m.name?`<div class="marker-label">${escapeHtml(m.name)}</div>`:''}`;
-      el.addEventListener('click',e=>{
-        e.stopPropagation();
-        showMarkerDetails(m);
-      });
-      markersLayer.appendChild(el);
-    }
-    renderScumMarkers(rect);
-  }
-
-  function escapeHtml(s){
-    return String(s||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
-  }
-
-  function openMapPhoto(url){const img=document.getElementById('mapPhotoFull');img.classList.remove('zoomed');img.style.transformOrigin='center center';img.src=url;document.getElementById('mapPhotoLightbox').classList.remove('hidden')}
-  function closeMapPhoto(){document.getElementById('mapPhotoLightbox').classList.add('hidden');const img=document.getElementById('mapPhotoFull');img.classList.remove('zoomed');img.removeAttribute('src')}
-  document.getElementById('mapPhotoClose').onclick=closeMapPhoto;
-  document.getElementById('mapPhotoFull').addEventListener('click',e=>{const img=e.currentTarget;if(!img.classList.contains('zoomed')){const rect=img.getBoundingClientRect();img.style.transformOrigin=((e.clientX-rect.left)/rect.width*100)+'% '+((e.clientY-rect.top)/rect.height*100)+'%';}img.classList.toggle('zoomed')});
-  document.getElementById('mapPhotoLightbox').addEventListener('click',e=>{if(e.target.id==='mapPhotoLightbox')closeMapPhoto()});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMapPhoto()});
-  function focusMapMarker(m){
-    if(!m?.id)return;
-    focusedMarkerId=m.id;
-    const halo=document.getElementById('mapFocusOverlay');
-    halo.style.display='block';
-    halo.style.setProperty('--pulse-color',m.color||MARKER_META[m.type]?.color||'#e25555');
-    halo.classList.remove('active');
-    void halo.offsetWidth;
-    halo.classList.add('active');
-    renderMarkers(mapRect());
-  }
-  function fillNickList(node,nicks,editable=false){
-    node.replaceChildren();
-    if(!nicks?.length){const empty=document.createElement('span');empty.textContent='Ники не добавлены';empty.style.cssText='color:#84959d;font-size:11px';node.appendChild(empty);return}
-    nicks.forEach((nick,i)=>{const chip=document.createElement('span');chip.className='enemy-nick';const name=document.createElement('span');name.textContent=nick;chip.appendChild(name);
-      if(editable){const del=document.createElement('button');del.type='button';del.textContent='×';del.title='Удалить участника';del.onclick=()=>{draftEnemyNicks.splice(i,1);renderEditorNicks()};chip.appendChild(del)}
-      node.appendChild(chip);
-    });
-  }
-  let draftEnemyNicks=[];
-  function renderEditorNicks(){fillNickList(document.getElementById('markerEditorNicks'),draftEnemyNicks,true)}
-  function addEnemyNick(){const input=document.getElementById('markerNickInput');const nick=input.value.trim();
-    if(nick&&!draftEnemyNicks.some(n=>n.toLowerCase()===nick.toLowerCase())&&draftEnemyNicks.length<50){draftEnemyNicks.push(nick);renderEditorNicks()}
-    input.value='';input.focus();
-  }
-  document.getElementById('markerNickAdd').onclick=addEnemyNick;
-  document.getElementById('markerNickInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addEnemyNick()}});
-  function showMarkerDetails(m){
-    focusMapMarker(m);
-    const viewer=document.getElementById('markerViewer');
-    const rosterNicks=m.enemyNicks||m.enemy_nicks||[];
-    fillNickList(document.getElementById('markerViewerNicks'),rosterNicks);
-    document.getElementById('markerViewerRoster').hidden=rosterNicks.length===0;
-    document.getElementById('markerViewerTitle').textContent=m.name||'Без названия';
-    const meta=MARKER_META[m.type]||MARKER_META.temp;
-    document.getElementById('markerViewerType').textContent=(m.icon||meta.icon||'')+' '+({base:'Вражеская база',stash:'Схрон',enemy:'Вражеская база',vehicle:'Транспорт',marker:'Маркер',text:'Текст'}[m.type]||'Объект');
-    const note=document.getElementById('markerViewerNote');
-    note.textContent=m.note?.trim()||'Комментарий не добавлен';
-    note.style.color=m.note?.trim()?'#e4ecef':'#85939c';
-    const gallery=document.getElementById('markerViewerPhotos');gallery.replaceChildren();
-    const related=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m.name?.trim().toLocaleLowerCase('ru'));
-    for(const p of related)for(const url of (p.images||[])){
-      if(typeof url!=='string'||!url.startsWith('https://'))continue;
-      const img=document.createElement('img');img.src=url;img.loading='lazy';img.alt='Фото '+m.name;
-      img.onclick=()=>openMapPhoto(url);gallery.appendChild(img);
-    }
-    document.getElementById('markerViewerEdit').onclick=()=>{viewer.classList.add('hidden');openMarkerPopup(m.x,m.y,m)};
-    document.getElementById('markerViewerClose').onclick=()=>viewer.classList.add('hidden');
-    viewer.classList.remove('hidden');
     // Anchor the details next to its map marker while keeping all buttons visible.
     const rect=mapRect(), sr=stage.getBoundingClientRect();
     const px=sr.left+rect.left+m.x*rect.size;
@@ -1217,7 +24,860 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     box.replaceChildren();
     for(const m of all.filter(x=>((x.name||'')+' '+(x.note||'')).toLowerCase().includes(q))){
       const b=document.createElement('button');b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
-      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusMapMarker(m);const selected=m.id;setTimeout(()=>{if(focusedMarkerId===selected)showMarkerDetails(m)},650)};box.appendChild(b);
+      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();focusMapMarker(m);showMarkerDetails(m);requestCamera()};box.appendChild(b);
+    }
+  }
+  document.getElementById('objectSearch').addEventListener('input',renderObjectList);
+    let hubMarkerPosts=[];
+  window.addEventListener('message',e=>{
+    if(!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumHubMarkerPosts'||!Array.isArray(e.data.posts))return;
+    hubMarkerPosts=e.data.posts;
+    if(editingMarkerId){const m=getMarkers().find(x=>x.id===editingMarkerId);if(m)renderHubMarkerPosts(m)}
+  });
+  let markerDraftFiles=[];
+  function addMarkerPhotos(files){
+    for(const file of files){
+      if(!file?.type?.startsWith('image/'))continue;
+      if(file.size>10*1024*1024){showToast('Фото больше 10 МБ');continue}
+      if(markerDraftFiles.length>=5){showToast('Максимум 5 фото');break}
+      markerDraftFiles.push(file);
+    }
+    renderDraftPhotos();
+  }
+  function renderDraftPhotos(){
+    const box=document.getElementById('hubDraftPhotos');box.replaceChildren();
+    markerDraftFiles.forEach((file,i)=>{
+      const wrap=document.createElement('span');wrap.style.cssText='position:relative;display:inline-flex';
+      const img=document.createElement('img');img.src=URL.createObjectURL(file);
+      img.onload=()=>URL.revokeObjectURL(img.src);
+      const remove=document.createElement('button');remove.type='button';remove.textContent='×';
+      remove.style.cssText='position:absolute;right:0;top:0;background:#8b2323;color:#fff;border:0;border-radius:4px;cursor:pointer';
+      remove.onclick=()=>{markerDraftFiles.splice(i,1);renderDraftPhotos()};
+      wrap.append(img,remove);box.appendChild(wrap);
+    });
+  }
+  document.getElementById('hubPostFiles').addEventListener('change',e=>{
+    addMarkerPhotos(Array.from(e.target.files||[]));e.target.value='';
+  });
+  document.addEventListener('paste',e=>{
+    if(markerPopup.classList.contains('hidden'))return;
+    const photos=Array.from(e.clipboardData?.items||[]).filter(x=>x.type.startsWith('image/')).map(x=>x.getAsFile()).filter(Boolean);
+    if(photos.length){e.preventDefault();addMarkerPhotos(photos)}
+  });
+  window.addEventListener('message',e=>{
+    if(!hubSharedMode||!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumMapPostResult')return;
+    const btn=document.getElementById('saveMarker');btn.disabled=false;btn.textContent='СОХРАНИТЬ';
+    if(e.data.ok){markerDraftFiles=[];renderDraftPhotos();closeMarkerPopup();showToast('Метка и фото сохранены')}
+    else showToast(e.data.error||'Ошибка загрузки фото');
+  });
+  function renderHubMarkerPosts(m){
+    const box=document.getElementById('hubMarkerPosts');
+    box.replaceChildren();
+    const posts=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m?.name?.trim().toLocaleLowerCase('ru'));
+    box.hidden=!posts.length;
+    document.getElementById('hubMarkerCompose').hidden=!hubSharedMode;
+    if(!posts.length)return;
+    const title=document.createElement('h4');title.textContent='ФОТО И ПУБЛИКАЦИИ';box.appendChild(title);
+    for(const p of posts){
+      const card=document.createElement('div');card.className='hub-marker-post';
+      const info=document.createElement('small');info.textContent=(p.author||'Участник')+(p.date?' · '+new Date(p.date).toLocaleDateString('ru-RU'):'');card.appendChild(info);
+      if(p.comment){const desc=document.createElement('p');desc.textContent=p.comment;card.appendChild(desc)}
+      const photos=document.createElement('div');photos.className='hub-marker-photos';
+      for(const url of (p.images||[])){
+        if(typeof url!=='string'||!url.startsWith('https://'))continue;
+        const img=document.createElement('img');img.src=url;img.alt='Фото базы';img.loading='lazy';img.onclick=()=>openMapPhoto(url);photos.appendChild(img);
+      }
+      card.appendChild(photos);box.appendChild(card);
+    }
+  }
+  const editTab=document.getElementById('markerEditTab'),rosterTab=document.getElementById('markerRosterTab');
+  function switchMarkerTab(roster){
+    document.getElementById('markerEditPane').hidden=roster;
+    document.getElementById('markerEditPaneRest').hidden=roster;
+    document.getElementById('markerRosterPane').hidden=!roster;
+    editTab.classList.toggle('active',!roster);rosterTab.classList.toggle('active',roster);
+    markerPopup.scrollTop=0;
+  }
+  editTab.onclick=()=>switchMarkerTab(false);
+  rosterTab.onclick=()=>switchMarkerTab(true);
+  function openMarkerPopup(nx,ny,existing=null){
+    if(existing)focusMapMarker(existing);
+    switchMarkerTab(false);
+    editTab.textContent=existing?'РЕДАКТИРОВАТЬ МЕТКУ':'НОВАЯ МЕТКА';
+    pendingMarkerNorm={x:nx,y:ny};
+    draftEnemyNicks=[...(existing?.enemyNicks||existing?.enemy_nicks||[])];renderEditorNicks();
+    editingMarkerId=existing?existing.id:null;
+    document.getElementById('markerPopupTitle').textContent=(existing?'Редактировать метку':'Новая метка');
+    document.getElementById('markerPopupHint').textContent=existing?'Для удаления метки используй кнопку «УДАЛИТЬ» в редакторе.':'Укажи название, описание и параметры метки.';
+    markerType.value=existing?(existing.type==='enemy'?'base':existing.type==='text'?'marker':existing.type):'base';
+    markerName.value=existing?existing.name:'';
+    markerNote.value=existing?existing.note:'';
+    objectIcon.value=existing?.icon||'';objectColor.value=existing?.color||MARKER_META[markerType.value]?.color||'#e25555';objectSize.value=existing?.size||32;objectSizeVal.value=objectSize.value;objectShowLabel.checked=true;objectLocked.checked=false;renderObjectIcons();
+    deleteMarkerBtn.style.display=existing?'block':'none';
+    markerDraftFiles=[];renderDraftPhotos();
+    // On phones, keep existing photos and photo picker above the icon palette.
+    const editor=markerPopup.querySelector('.map-object-editor');
+    const posts=document.getElementById('hubMarkerPosts');
+    const compose=document.getElementById('hubMarkerCompose');
+    const buttons=markerPopup.querySelector('.popup-actions');
+    // Keep publications inside the edit-only pane, including on mobile.
+    const editRest=document.getElementById('markerEditPaneRest');
+    if(window.matchMedia('(max-width:768px)').matches){
+      editRest.insertBefore(posts,editor);
+      editRest.insertBefore(compose,editor);
+    }else{
+      editRest.append(posts,compose);
+    }
+    renderHubMarkerPosts(existing||null);
+    markerPopup.classList.remove('hidden');
+    markerPopup.scrollTop=0;
+
+    // Always keep the editor fully inside the iframe viewport.
+    // Place it near the selected point when possible, otherwise flip it to the other side.
+    markerPopup.style.transform='none';
+    const rect=mapRect(), sr=stage.getBoundingClientRect();
+    const x=sr.left+rect.left+nx*rect.size;
+    const y=sr.top+rect.top+ny*rect.size;
+    const margin=12, gap=38;
+    const width=markerPopup.offsetWidth, height=markerPopup.offsetHeight;
+    const availableWidth=window.innerWidth;
+    let left=x+gap;
+    if(left+width+margin>availableWidth) left=x-width-gap;
+    left=Math.max(margin,Math.min(availableWidth-width-margin,left));
+    let top=y-height/2;
+    top=Math.max(margin,Math.min(window.innerHeight-height-margin,top));
+    markerPopup.style.left=left+'px';
+    markerPopup.style.top=top+'px';
+  }
+
+  function closeMarkerPopup(){
+    markerPopup.classList.add('hidden');
+    editingMarkerId=null;
+    pendingMarkerNorm=null;
+  }
+
+
+  if(window.matchMedia('(max-width:768px)').matches){
+    markerPopup.querySelectorAll('input,textarea,select').forEach(el=>{
+      el.addEventListener('focus',()=>{
+        setTimeout(()=>el.scrollIntoView({block:'center',behavior:'smooth'}),180);
+      });
+    });
+  }
+
+  document.getElementById('saveMarker').addEventListener('click',()=>{
+    if(!pendingMarkerNorm) return;
+    const arr=getMarkers();
+    const item={
+      id:editingMarkerId||uid(),
+      x:pendingMarkerNorm.x,
+      y:pendingMarkerNorm.y,
+      type:markerType.value,
+      name:markerName.value.trim(),
+      note:markerNote.value.trim(),
+      enemyNicks:[...draftEnemyNicks],
+      icon:objectIcon.value.trim()||MARKER_META[markerType.value]?.icon||'📍',color:objectColor.value,size:Number(objectSize.value),showLabel:objectShowLabel.checked,locked:objectLocked.checked,
+      updatedAt:Date.now()
+    };
+    const idx=arr.findIndex(x=>x.id===item.id);
+    if(idx>=0) arr[idx]=item; else arr.push(item);
+    setMarkers(arr);
+    notifyHub("save",item);
+    renderObjectList();
+    if(hubSharedMode&&markerDraftFiles.length){
+      const btn=document.getElementById('saveMarker');btn.disabled=true;btn.textContent='ЗАГРУЗКА…';
+      sendHubMessage({kind:'scumMapCreatePost',marker:item.name,markerId:item.id,comment:item.note,files:[...markerDraftFiles]});
+    }else closeMarkerPopup();
+    renderMarkers(mapRect());
+    schedule();
+    showToast('Объект сохранён');
+  });
+
+  deleteMarkerBtn.addEventListener('click',()=>{
+    if(!editingMarkerId) return;
+    if(!confirm('Удалить эту метку?')) return;
+    setMarkers(getMarkers().filter(x=>x.id!==editingMarkerId));
+    notifyHub("delete",null,editingMarkerId);
+    renderObjectList();
+    closeMarkerPopup();
+    renderMarkers(mapRect());
+    schedule();
+    showToast('Метка удалена');
+  });
+
+  document.getElementById('cancelMarker').addEventListener('click',closeMarkerPopup);
+
+  addMarkerBtn.addEventListener('click',()=>{
+    addMarkerMode=!addMarkerMode;
+    addMarkerBtn.classList.toggle('active',addMarkerMode);
+    addMarkerBtn.textContent=addMarkerMode?'КЛИКНИ ПО КАРТЕ':'＋ ДОБАВИТЬ МЕТКУ';
+
+    if(addMarkerMode && window.matchMedia('(max-width:768px)').matches){
+      // Immediately return the user to the map on mobile.
+      setDrawer(false);
+      showToast('Нажми на карту, чтобы поставить метку');
+    }
+  });
+
+  stage.addEventListener('click',e=>{
+    if(!addMarkerMode) return;
+    const rect=mapRect();
+    const pt=eventToStagePoint(e);
+    const nx=(pt.x-rect.left)/rect.size;
+    const ny=(pt.y-rect.top)/rect.size;
+    if(nx<0||nx>1||ny<0||ny>1) return;
+    addMarkerMode=false;
+    addMarkerBtn.classList.remove('active');
+    addMarkerBtn.textContent='＋ ДОБАВИТЬ МЕТКУ';
+    openMarkerPopup(nx,ny,null);
+  });
+
+
+  const profileSelect=document.getElementById('profileSelect');
+  const addProfileBtn=document.getElementById('addProfileBtn');
+  const deleteProfileBtn=document.getElementById('deleteProfileBtn');
+
+  function saveProfiles(){
+    localStorage.setItem('scumMapProfiles',JSON.stringify(profiles));
+    localStorage.setItem('scumMapCurrentProfile',currentProfile);
+  }
+
+  function renderProfileSelect(){
+    profileSelect.innerHTML='';
+    profiles.forEach(name=>{
+      const opt=document.createElement('option');
+      opt.value=name;
+      opt.textContent=name;
+      opt.selected=(name===currentProfile);
+      profileSelect.appendChild(opt);
+    });
+    deleteProfileBtn.disabled=profiles.length<=1;
+    deleteProfileBtn.style.opacity=profiles.length<=1?'.45':'1';
+  }
+
+  profileSelect.addEventListener('change',()=>{
+    currentProfile=profileSelect.value;
+    saveProfiles();
+    closeMarkerPopup();
+    renderMarkers(mapRect());
+    schedule();
+    showToast('Профиль: '+currentProfile);
+  });
+
+  addProfileBtn.addEventListener('click',()=>{
+    const raw=prompt('Название нового профиля / сервера:');
+    if(raw===null) return;
+    const name=raw.trim();
+    if(!name) return;
+    const exists=profiles.some(p=>p.toLowerCase()===name.toLowerCase());
+    if(exists){
+      currentProfile=profiles.find(p=>p.toLowerCase()===name.toLowerCase());
+      saveProfiles();
+      renderProfileSelect();
+      schedule();
+      showToast('Профиль уже существует');
+      return;
+    }
+    profiles.push(name);
+    currentProfile=name;
+    saveProfiles();
+    renderProfileSelect();
+    schedule();
+    showToast('Создан профиль: '+name);
+  });
+
+  deleteProfileBtn.addEventListener('click',()=>{
+    if(profiles.length<=1) return;
+    const count=getMarkers().length;
+    const msg=count
+      ? `Удалить профиль "${currentProfile}" и ${count} меток внутри него?`
+      : `Удалить профиль "${currentProfile}"?`;
+    if(!confirm(msg)) return;
+
+    localStorage.removeItem(markerStoreKey());
+    profiles=profiles.filter(p=>p!==currentProfile);
+    currentProfile=profiles[0];
+    saveProfiles();
+    renderProfileSelect();
+    closeMarkerPopup();
+    schedule();
+    showToast('Профиль удалён');
+  });
+
+  renderProfileSelect();
+
+
+  document.querySelectorAll('.subgroup-head').forEach(btn=>{
+    btn.addEventListener('click',()=>btn.closest('.subgroup').classList.toggle('closed'));
+  });
+
+  document.querySelectorAll('[data-scum-filter]').forEach(ch=>{
+    ch.checked=!!scumFilters[ch.dataset.scumFilter];
+    ch.addEventListener('change',()=>{
+      scumFilters[ch.dataset.scumFilter]=ch.checked;
+      renderTiles();
+    });
+  });
+
+
+
+
+
+  const killboxCheckbox=document.querySelector('[data-scum-filter="killboxes"]');
+  if(killboxCheckbox){
+    killboxCheckbox.addEventListener('change',()=>{
+      const count=killboxCheckbox.parentElement.querySelector('.filter-count');
+      if(count) count.textContent=killboxCheckbox.checked?'12/12':'0/12';
+    });
+  }
+
+  const bunkerCheckbox=document.querySelector('[data-scum-filter="bunkers"]');
+  if(bunkerCheckbox){
+    bunkerCheckbox.addEventListener('change',()=>{
+      const count=bunkerCheckbox.parentElement.querySelector('span');
+      if(count) count.textContent=bunkerCheckbox.checked?'8/8':'0/8';
+    });
+  }
+
+  const secretCheckbox=document.querySelector('[data-scum-filter="secret"]');
+  if(secretCheckbox){
+    secretCheckbox.addEventListener('change',()=>{
+      const count=secretCheckbox.parentElement.querySelector('span');
+      if(count) count.textContent=secretCheckbox.checked?'11/11':'0/11';
+    });
+  }
+
+  const brenorCheckbox=document.querySelector('[data-scum-filter="brenor"]');
+  if(brenorCheckbox){
+    brenorCheckbox.addEventListener('change',()=>{
+      const count=brenorCheckbox.parentElement.querySelector('span');
+      if(count) count.textContent=brenorCheckbox.checked?'4/4':'0/4';
+    });
+  }
+
+  document.querySelectorAll('[data-filter]').forEach(ch=>{
+    ch.addEventListener('change',()=>{
+      markerFilters[ch.dataset.filter]=ch.checked;
+      schedule();
+    });
+  });
+
+
+
+
+
+  document.getElementById('ctxCopyLocation').addEventListener('click',()=>{
+    if(!contextLocation) return;
+    selectedLocation={...contextLocation};
+    locationInput.value=`X=${contextLocation.x.toFixed(1)} Y=${contextLocation.y.toFixed(1)} Z=0`;
+    if(renderRAF){
+      cancelAnimationFrame(renderRAF);
+      renderRAF=0;
+    }
+    renderTiles();
+    copyText(`X=${contextLocation.x.toFixed(1)} Y=${contextLocation.y.toFixed(1)} Z=0`);
+    mapContext.classList.remove('show');
+    schedule();
+  });
+
+  document.getElementById('ctxCopyTeleport').addEventListener('click',()=>{
+    if(!contextLocation) return;
+    copyText(`#Teleport ${contextLocation.x.toFixed(1)} ${contextLocation.y.toFixed(1)} 0`);
+    mapContext.classList.remove('show');
+  });
+
+  document.addEventListener('pointerdown',e=>{
+    if(!mapContext.contains(e.target)) mapContext.classList.remove('show');
+  });
+
+  window.addEventListener('blur',()=>mapContext.classList.remove('show'));
+
+  function renderTiles(){
+    renderRAF=0;
+    clampCenter();
+    const rect=mapRect();
+
+    // Hard clip HD tiles to the visible square of the map.
+    // This prevents Safari from painting stale tile surfaces below/around it.
+    const vwClip=stage.clientWidth;
+    const vhClip=stage.clientHeight;
+    const clipTop=Math.max(0,rect.top);
+    const clipLeft=Math.max(0,rect.left);
+    const clipRight=Math.max(0,vwClip-(rect.left+rect.size));
+    const clipBottom=Math.max(0,vhClip-(rect.top+rect.size));
+    const clipValue=`inset(${clipTop}px ${clipRight}px ${clipBottom}px ${clipLeft}px)`;
+    tilesEl.style.clipPath=clipValue;
+    tilesEl.style.webkitClipPath=clipValue;
+    renderFallback(rect);
+    renderTraders(rect);
+    renderSectors(rect);
+    renderLocation(rect);
+    renderMarkers(rect);
+
+    const targetLevel=levelForZoom();
+    const vw=stage.clientWidth,vh=stage.clientHeight;
+
+    function visibleKeys(level){
+      const n=2**(level-MIN_LEVEL);
+      const tileScreen=rect.size/n;
+      let x0=Math.floor((0-rect.left)/tileScreen)-1;
+      let y0=Math.floor((0-rect.top)/tileScreen)-1;
+      let x1=Math.ceil((vw-rect.left)/tileScreen)+1;
+      let y1=Math.ceil((vh-rect.top)/tileScreen)+1;
+      x0=Math.max(0,x0);y0=Math.max(0,y0);x1=Math.min(n-1,x1);y1=Math.min(n-1,y1);
+      const arr=[];
+      for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++) arr.push({key:`${level}/${x}/${y}`,level,x,y,n,tileScreen});
+      return arr;
+    }
+
+    // When quality level changes, do NOT delete the old sharp tiles. Load the
+    // new level above them first, then retire the previous level only when all
+    // currently visible new tiles have finished loading.
+    if(targetLevel!==activeLevel && pendingLevel!==targetLevel){
+      pendingLevel=targetLevel;
+      pendingWanted=new Set(visibleKeys(targetLevel).map(v=>v.key));
+      pendingLoaded=new Set();
+    }
+
+    const levelsToDraw=new Set([activeLevel,targetLevel]);
+    if(pendingLevel!==null) levelsToDraw.add(pendingLevel);
+    const keep=new Set();
+
+    for(const level of levelsToDraw){
+      for(const t of visibleKeys(level)){
+        keep.add(t.key);
+        let img=tileNodes.get(t.key);
+        if(!img){
+          img=new Image();
+          img.className='tile';
+          img.alt='';
+          img.decoding='async';
+          img.referrerPolicy='no-referrer';
+          img.dataset.key=t.key;
+          img.dataset.level=String(level);
+          img.style.opacity=IS_IOS_SAFARI?'1':'0';
+          img.style.transition=IS_IOS_SAFARI?'none':'opacity .10s linear';
+          img.onload=()=>{
+            successfulTiles++;
+            img.dataset.loaded='1';
+            img.style.opacity='1';
+            status.className='status hq';
+            statusText.textContent=`SCUM-MAP HD TILES · Z${targetLevel} · ${TILE}px`;
+            if(pendingLevel===level){
+              pendingLoaded.add(t.key);
+              let ready=true;
+              for(const k of pendingWanted){
+                const node=tileNodes.get(k);
+                if(!node || node.dataset.loaded!=='1'){ready=false;break;}
+              }
+              if(ready){
+                activeLevel=pendingLevel;
+                pendingLevel=null;
+                pendingWanted=new Set();
+                pendingLoaded=new Set();
+                schedule();
+              }
+            }
+          };
+          img.onerror=()=>{
+            failedTiles++;
+            img.remove();tileNodes.delete(t.key);
+            if(successfulTiles===0){status.className='status local';statusText.textContent='HD недоступны · работает локальная карта';}
+          };
+          img.src=tileURL(level,t.x,t.y);
+          tilesEl.appendChild(img);tileNodes.set(t.key,img);
+        }
+        // Reposition every retained level on every frame, so old tiles stay
+        // perfectly aligned while the new level loads instead of showing blur.
+        img.style.left=(rect.left+t.x*t.tileScreen-0.5)+'px';
+        img.style.top=(rect.top+t.y*t.tileScreen-0.5)+'px';
+        img.style.width=(t.tileScreen+1)+'px';
+        img.style.height=(t.tileScreen+1)+'px';
+        img.style.zIndex=String(Math.min(level,6));
+      }
+    }
+
+    // Keep previous quality level during transition; remove unrelated tiles.
+    for(const [key,node] of tileNodes){
+      const lvl=Number(node.dataset.level);
+      const transitionKeep=(pendingLevel!==null && (lvl===activeLevel || lvl===pendingLevel));
+      if(!keep.has(key) && !transitionKeep){node.remove();tileNodes.delete(key)}
+    }
+
+    // iOS Safari: once a quality switch is complete, physically detach every
+    // stale level immediately. This avoids ghost/streak surfaces in WebKit.
+    if(IS_IOS_SAFARI && pendingLevel===null && activeLevel!==lastIosLevel){
+      for(const [key,node] of [...tileNodes]){
+        const lvl=Number(node.dataset.level);
+        if(lvl!==activeLevel){
+          node.remove();
+          tileNodes.delete(key);
+        }
+      }
+      lastIosLevel=activeLevel;
+
+      // Force WebKit to commit the cleaned paint layer once, only on level changes.
+      tilesEl.style.visibility='hidden';
+      void tilesEl.offsetHeight;
+      tilesEl.style.visibility='visible';
+    }
+
+    const n=2**(targetLevel-MIN_LEVEL);
+    bottom.textContent=`${Math.round(zoom*100)}% · HD Z${targetLevel} · ${n}×${n}`;
+  }
+
+  function schedule(){if(!renderRAF)renderRAF=requestAnimationFrame(renderTiles)}
+  function zoomAt(factor,sx,sy){
+    const before=mapRect();
+    const mx=(sx-before.left)/before.size,my=(sy-before.top)/before.size;
+    const old=zoom;
+    zoom=Math.max(1,Math.min(MAX_ZOOM,zoom*factor));
+    if(zoom===old)return;
+    const newSize=fitSize()*zoom;
+    cx=mx-(sx-stage.clientWidth/2)/newSize;
+    cy=my-(sy-stage.clientHeight/2)/newSize;
+    clampCenter();schedule();
+  }
+
+  
+
+
+  const activePointers=new Map();
+  let gestureMode=null;
+  let panStart=null;
+  let pinchStart=null;
+
+  // Smooth camera target. Input changes targets; RAF eases the real camera toward them.
+  let targetCx=cx, targetCy=cy, targetZoom=zoom;
+  let cameraRAF=0;
+  let velocityX=0, velocityY=0;
+  let lastPointerSample=null;
+  let inertiaRAF=0;
+
+  function pointerStagePoint(e){
+    const sr=stage.getBoundingClientRect();
+    return {x:e.clientX-sr.left,y:e.clientY-sr.top};
+  }
+
+  function currentTouchPoints(){
+    return [...activePointers.values()].filter(p=>p.type==='touch');
+  }
+
+  function syncTargets(){
+    targetCx=cx; targetCy=cy; targetZoom=zoom;
+  }
+
+  function clampTarget(){
+    // Temporarily clamp by applying targets to camera, then restore.
+    const ocx=cx, ocy=cy, oz=zoom;
+    cx=targetCx; cy=targetCy; zoom=targetZoom;
+    clampCenter();
+    targetCx=cx; targetCy=cy; targetZoom=zoom;
+    cx=ocx; cy=ocy; zoom=oz;
+  }
+
+  function animateCamera(){
+    cameraRAF=0;
+
+    const zoomDiff=targetZoom-zoom;
+    const xDiff=targetCx-cx;
+    const yDiff=targetCy-cy;
+
+    // Fast but smooth response. Slightly stronger on desktop, buttery on touch.
+    const ease=gestureMode==='pinch' ? 0.42 : 0.34;
+
+    zoom += zoomDiff*ease;
+    cx += xDiff*ease;
+    cy += yDiff*ease;
+
+    if(Math.abs(zoomDiff)<0.00025) zoom=targetZoom;
+    if(Math.abs(xDiff)<0.000002) cx=targetCx;
+    if(Math.abs(yDiff)<0.000002) cy=targetCy;
+
+    clampCenter();
+    schedule();
+    if(activeDetailMarker)positionMarkerDetails(activeDetailMarker);
+
+    if(
+      Math.abs(targetZoom-zoom)>0.00025 ||
+      Math.abs(targetCx-cx)>0.000002 ||
+      Math.abs(targetCy-cy)>0.000002
+    ){
+      cameraRAF=requestAnimationFrame(animateCamera);
+    }
+  }
+
+  function requestCamera(){
+    if(!cameraRAF) cameraRAF=requestAnimationFrame(animateCamera);
+  }
+
+  function stopInertia(){
+    if(inertiaRAF){
+      cancelAnimationFrame(inertiaRAF);
+      inertiaRAF=0;
+    }
+  }
+
+  function startInertia(){
+    stopInertia();
+    if(Math.hypot(velocityX,velocityY)<0.000025) return;
+
+    let prev=performance.now();
+    const tick=(now)=>{
+      const dt=Math.min(32,now-prev)/16.667;
+      prev=now;
+
+      targetCx += velocityX*dt;
+      targetCy += velocityY*dt;
+      clampTarget();
+      requestCamera();
+
+      // Natural glide with quick enough stopping for precise map work.
+      velocityX *= Math.pow(0.88,dt);
+      velocityY *= Math.pow(0.88,dt);
+
+      if(Math.hypot(velocityX,velocityY)>0.000012){
+        inertiaRAF=requestAnimationFrame(tick);
+      }else{
+        inertiaRAF=0;
+      }
+    };
+    inertiaRAF=requestAnimationFrame(tick);
+  }
+
+  function beginPinch(){
+    const pts=currentTouchPoints();
+    if(pts.length<2) return;
+    stopInertia();
+
+    const a=pts[0],b=pts[1];
+    const midX=(a.x+b.x)/2;
+    const midY=(a.y+b.y)/2;
+    const dist=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));
+
+    // Use the target camera so pinch never fights the easing camera.
+    const oldCx=cx,oldCy=cy,oldZoom=zoom;
+    cx=targetCx;cy=targetCy;zoom=targetZoom;
+    const rect=mapRect();
+    cx=oldCx;cy=oldCy;zoom=oldZoom;
+
+    pinchStart={
+      dist,
+      zoom:targetZoom,
+      nx:(midX-rect.left)/rect.size,
+      ny:(midY-rect.top)/rect.size
+    };
+
+    gestureMode='pinch';
+    panStart=null;
+    velocityX=velocityY=0;
+    stage.classList.add('drag');
+  }
+
+  stage.addEventListener('pointerdown',e=>{
+    // Existing objects own their clicks. Do not capture their pointers for map dragging.
+    if(e.target.closest('.map-marker')) return;
+    if(e.pointerType==='mouse' && e.button!==0) return;
+
+    stopInertia();
+    syncTargets();
+
+    const p=pointerStagePoint(e);
+    activePointers.set(e.pointerId,{x:p.x,y:p.y,type:e.pointerType});
+    try{stage.setPointerCapture(e.pointerId)}catch{}
+
+    if(e.pointerType==='touch'){
+      const pts=currentTouchPoints();
+      if(pts.length>=2){
+        beginPinch();
+      }else{
+        gestureMode='pan';
+        panStart={x:p.x,y:p.y,cx:targetCx,cy:targetCy};
+        lastPointerSample={x:p.x,y:p.y,t:performance.now()};
+        stage.classList.add('drag');
+      }
+      e.preventDefault();
+      return;
+    }
+
+    gestureMode='pan';
+    panStart={x:p.x,y:p.y,cx:targetCx,cy:targetCy};
+    lastPointerSample={x:p.x,y:p.y,t:performance.now()};
+    stage.classList.add('drag');
+  });
+
+  stage.addEventListener('pointermove',e=>{
+    if(!activePointers.has(e.pointerId)) return;
+
+    const p=pointerStagePoint(e);
+    const prev=activePointers.get(e.pointerId);
+    activePointers.set(e.pointerId,{x:p.x,y:p.y,type:prev.type});
+
+    if(prev.type==='touch'){
+      const pts=currentTouchPoints();
+
+      if(pts.length>=2){
+        if(gestureMode!=='pinch' || !pinchStart) beginPinch();
+
+        const a=pts[0],b=pts[1];
+        const midX=(a.x+b.x)/2;
+        const midY=(a.y+b.y)/2;
+        const dist=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));
+
+        targetZoom=Math.max(1,Math.min(MAX_ZOOM,pinchStart.zoom*(dist/pinchStart.dist)));
+
+        const newSize=fitSize()*targetZoom;
+        targetCx=pinchStart.nx-(midX-stage.clientWidth/2)/newSize;
+        targetCy=pinchStart.ny-(midY-stage.clientHeight/2)/newSize;
+
+        clampTarget();
+        requestCamera();
+        e.preventDefault();
+        return;
+      }
+
+      if(pts.length===1){
+        const only=pts[0];
+        if(gestureMode!=='pan' || !panStart){
+          gestureMode='pan';
+          panStart={x:only.x,y:only.y,cx:targetCx,cy:targetCy};
+          lastPointerSample={x:only.x,y:only.y,t:performance.now()};
+        }
+
+        const size=fitSize()*targetZoom;
+        targetCx=panStart.cx-(only.x-panStart.x)/size;
+        targetCy=panStart.cy-(only.y-panStart.y)/size;
+        clampTarget();
+
+        const now=performance.now();
+        if(lastPointerSample){
+          const dt=Math.max(8,now-lastPointerSample.t);
+          velocityX=-(only.x-lastPointerSample.x)/size*(16.667/dt);
+          velocityY=-(only.y-lastPointerSample.y)/size*(16.667/dt);
+        }
+        lastPointerSample={x:only.x,y:only.y,t:now};
+
+        requestCamera();
+        e.preventDefault();
+      }
+      return;
+    }
+
+    if(gestureMode==='pan' && panStart){
+      const size=fitSize()*targetZoom;
+      targetCx=panStart.cx-(p.x-panStart.x)/size;
+      targetCy=panStart.cy-(p.y-panStart.y)/size;
+      clampTarget();
+
+      const now=performance.now();
+      if(lastPointerSample){
+        const dt=Math.max(8,now-lastPointerSample.t);
+        velocityX=-(p.x-lastPointerSample.x)/size*(16.667/dt);
+        velocityY=-(p.y-lastPointerSample.y)/size*(16.667/dt);
+      }
+      lastPointerSample={x:p.x,y:p.y,t:now};
+
+      requestCamera();
+    }
+  });
+
+  function finishPointer(e){
+    const wasTouch=activePointers.get(e.pointerId)?.type==='touch';
+    activePointers.delete(e.pointerId);
+    try{stage.releasePointerCapture(e.pointerId)}catch{}
+
+    if(wasTouch){
+      const pts=currentTouchPoints();
+      if(pts.length>=2){
+        beginPinch();
+        return;
+      }
+      if(pts.length===1){
+        const only=pts[0];
+        gestureMode='pan';
+        panStart={x:only.x,y:only.y,cx:targetCx,cy:targetCy};
+        pinchStart=null;
+        lastPointerSample={x:only.x,y:only.y,t:performance.now()};
+        return;
+      }
+    }
+
+    const wasPan=gestureMode==='pan';
+    gestureMode=null;
+    panStart=null;
+    pinchStart=null;
+    lastPointerSample=null;
+    stage.classList.remove('drag');
+
+    if(wasPan) startInertia();
+  }
+
+  stage.addEventListener('pointerup',finishPointer);
+  stage.addEventListener('pointercancel',finishPointer);
+
+  stage.addEventListener('wheel',e=>{
+    e.preventDefault();
+    mapContext.classList.remove('show');
+    stopInertia();
+
+    // Keep current target camera as the basis for consecutive wheel events.
+    const sr=stage.getBoundingClientRect();
+    const sx=e.clientX-sr.left;
+    const sy=e.clientY-sr.top;
+
+    const oldCx=cx,oldCy=cy,oldZoom=zoom;
+    cx=targetCx;cy=targetCy;zoom=targetZoom;
+    const rect=mapRect();
+    cx=oldCx;cy=oldCy;zoom=oldZoom;
+
+    const nx=(sx-rect.left)/rect.size;
+    const ny=(sy-rect.top)/rect.size;
+
+    const factor=e.deltaY<0 ? 1.16 : 1/1.16;
+    targetZoom=Math.max(1,Math.min(MAX_ZOOM,targetZoom*factor));
+
+    const newSize=fitSize()*targetZoom;
+    targetCx=nx-(sx-stage.clientWidth/2)/newSize;
+    targetCy=ny-(sy-stage.clientHeight/2)/newSize;
+
+    clampTarget();
+    requestCamera();
+  },{passive:false});
+
+
+
+  document.getElementById('plus').addEventListener('click',()=>zoomAt(1.45,stage.clientWidth/2,stage.clientHeight/2));
+  document.getElementById('minus').addEventListener('click',()=>zoomAt(1/1.45,stage.clientWidth/2,stage.clientHeight/2));
+  document.getElementById('home').addEventListener('click',()=>{zoom=1;cx=.5;cy=.5;schedule()});
+  window.addEventListener('resize',schedule);
+
+  fb.addEventListener('load',()=>{schedule()});
+  renderObjectList();
+  schedule();
+})();
+</script>
+</body>
+</html>
+    activeDetailMarker=m;
+    positionMarkerDetails(m);
+  }
+
+  const objectIcon=document.getElementById('objectIcon'),objectColor=document.getElementById('objectColor'),objectSize=document.getElementById('objectSize'),objectSizeVal=document.getElementById('objectSizeVal'),objectShowLabel=document.getElementById('objectShowLabel'),objectLocked=document.getElementById('objectLocked');
+  const OBJECT_ICONS=['📍','🏠','🏪','⛽','🚗','🔫','💊','🍖','💧','⚠️','☠️','⭐','🏁','🎯','📦','🛡️','✈️','⚓'];
+  function renderObjectIcons(){
+    const grid=document.getElementById('objectIconGrid');grid.replaceChildren();
+    for(const icon of OBJECT_ICONS){const b=document.createElement('button');b.type='button';b.textContent=icon;b.classList.toggle('active',objectIcon.value===icon);b.onclick=()=>{objectIcon.value=icon;renderObjectIcons()};grid.appendChild(b)}
+  }
+  objectIcon.addEventListener('input',renderObjectIcons);
+  objectSize.addEventListener('input',()=>objectSizeVal.value=objectSize.value);
+  markerType.addEventListener('change',()=>{objectIcon.value=MARKER_META[markerType.value]?.icon||'📍';objectColor.value=MARKER_META[markerType.value]?.color||'#ffffff';renderObjectIcons()});
+  function renderObjectList(){
+    const all=getMarkers(),box=document.getElementById('objectList'),q=document.getElementById('objectSearch').value.toLowerCase();
+    document.getElementById('objectCount').textContent=all.length;
+    box.replaceChildren();
+    for(const m of all.filter(x=>((x.name||'')+' '+(x.note||'')).toLowerCase().includes(q))){
+      const b=document.createElement('button');b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
+      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();focusMapMarker(m);showMarkerDetails(m);requestCamera()};box.appendChild(b);
     }
   }
   document.getElementById('objectSearch').addEventListener('input',renderObjectList);
