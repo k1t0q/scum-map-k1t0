@@ -933,11 +933,40 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   }
 
   function markerStoreKey(){return 'scumMapMarkersProfile_'+safeProfileKey(currentProfile)}
+  const hubSharedMode=document.documentElement.classList.contains('hub-embed');
+  let sharedMarkers=[],sharedReady=false;
   function getMarkers(){
+    if(hubSharedMode) return sharedMarkers;
     try{return JSON.parse(localStorage.getItem(markerStoreKey())||'[]')}
     catch(e){return []}
   }
-  function setMarkers(arr){localStorage.setItem(markerStoreKey(),JSON.stringify(arr))}
+  function setMarkers(arr){
+    if(hubSharedMode){sharedMarkers=arr;return}
+    localStorage.setItem(markerStoreKey(),JSON.stringify(arr));
+  }
+  function notifyHub(action,marker,id){
+    if(hubSharedMode)parent.postMessage({kind:'scumMapMarkerAction',action,marker,id},'https://k1t0q.github.io');
+  }
+  window.addEventListener('message',e=>{
+    if(!hubSharedMode||e.origin!=='https://k1t0q.github.io'||e.data?.kind!=='scumMapSharedMarkers')return;
+    if(!Array.isArray(e.data.markers))return;
+    sharedMarkers=e.data.markers.map(m=>({...m,showLabel:m.show_label,locked:m.locked}));
+    sharedReady=true;
+    renderObjectList();renderMarkers(mapRect());schedule();
+  });
+  if(hubSharedMode){
+    setTimeout(()=>{
+      let local=[];try{
+        for(const key of Object.keys(localStorage)){
+          if(key.startsWith('scumMapMarkersProfile_')){
+            const v=JSON.parse(localStorage.getItem(key)||'[]');
+            if(Array.isArray(v))local.push(...v);
+          }
+        }
+      }catch(e){}
+      parent.postMessage({kind:'scumMapReady',localMarkers:local},'https://k1t0q.github.io');
+    },350);
+  }
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 
 
@@ -1125,6 +1154,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     const idx=arr.findIndex(x=>x.id===item.id);
     if(idx>=0) arr[idx]=item; else arr.push(item);
     setMarkers(arr);
+    notifyHub("save",item);
     renderObjectList();
     closeMarkerPopup();
     renderMarkers(mapRect());
@@ -1136,6 +1166,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     if(!editingMarkerId) return;
     if(!confirm('Удалить эту метку?')) return;
     setMarkers(getMarkers().filter(x=>x.id!==editingMarkerId));
+    notifyHub("delete",null,editingMarkerId);
     renderObjectList();
     closeMarkerPopup();
     renderMarkers(mapRect());
