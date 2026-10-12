@@ -931,11 +931,11 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     if(nums.length>=2) return {x:nums[0],y:nums[1],z:nums[2]||0};
     return null;
   }
-  function showToast(text){
+  function showToast(text,duration=1400){
     copyToast.textContent=text;
     copyToast.classList.add('show');
     clearTimeout(showToast.t);
-    showToast.t=setTimeout(()=>copyToast.classList.remove('show'),1400);
+    showToast.t=setTimeout(()=>copyToast.classList.remove('show'),duration);
   }
   async function copyText(text){
     try{await navigator.clipboard.writeText(text);showToast('Скопировано: '+text)}
@@ -1169,8 +1169,20 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   }
   let draftEnemyNicks=[];
   function renderEditorNicks(){fillNickList(document.getElementById('markerEditorNicks'),draftEnemyNicks,true)}
+  function nickKey(nick){return String(nick||'').trim().toLocaleLowerCase('ru')}
+  function nickSquadConflict(nick,markerId=editingMarkerId){
+    const key=nickKey(nick);
+    return getMarkers().find(m=>m.id!==markerId &&
+      (Array.isArray(m.enemyNicks)?m.enemyNicks:(Array.isArray(m.enemy_nicks)?m.enemy_nicks:[]))
+        .some(n=>nickKey(n)===key));
+  }
   function addEnemyNick(){const input=document.getElementById('markerNickInput');const nick=input.value.trim();
-    if(nick&&!draftEnemyNicks.some(n=>n.toLowerCase()===nick.toLowerCase())&&draftEnemyNicks.length<50){draftEnemyNicks.push(nick);renderEditorNicks()}
+    if(!nick)return;
+    const conflict=nickSquadConflict(nick);
+    if(conflict){showToast('Игрок '+nick+' уже находится в отряде «'+(conflict.name||'Без названия')+'»',4000);input.focus();return}
+    if(draftEnemyNicks.some(n=>nickKey(n)===nickKey(nick))){showToast('Этот ник уже добавлен в данный отряд',3000);input.focus();return}
+    if(draftEnemyNicks.length>=50){showToast('Максимум 50 участников',3000);return}
+    draftEnemyNicks.push(nick);renderEditorNicks();
     input.value='';input.focus();
   }
   document.getElementById('markerNickAdd').onclick=addEnemyNick;
@@ -1393,6 +1405,10 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   document.getElementById('saveMarker').addEventListener('click',()=>{
     if(!pendingMarkerNorm) return;
     const arr=getMarkers();
+    for(const nick of draftEnemyNicks){
+      const conflict=nickSquadConflict(nick);
+      if(conflict){showToast('Игрок '+nick+' уже находится в отряде «'+(conflict.name||'Без названия')+'»',4000);return}
+    }
     const item={
       id:editingMarkerId||uid(),
       x:pendingMarkerNorm.x,
