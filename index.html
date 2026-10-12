@@ -1099,7 +1099,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     box.replaceChildren();
     for(const m of all.filter(x=>((x.name||'')+' '+(x.note||'')).toLowerCase().includes(q))){
       const b=document.createElement('button');b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
-      b.onclick=()=>{showMarkerDetails(m)};box.appendChild(b);
+      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden')};box.appendChild(b);
     }
   }
   document.getElementById('objectSearch').addEventListener('input',renderObjectList);
