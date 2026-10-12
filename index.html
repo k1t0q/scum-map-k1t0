@@ -116,6 +116,11 @@
   .add-marker-btn.active{background:#315f36}
   .markers-layer{position:absolute;inset:0;pointer-events:none;z-index:40000}
   .map-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;z-index:1}
+.map-marker.map-focus{z-index:5}
+.map-marker.map-focus::before{content:"";position:absolute;left:50%;top:50%;width:48px;height:48px;border:2px solid var(--object-color,#e25555);background:var(--object-color,#e25555);border-radius:50%;transform:translate(-50%,-50%) scale(.45);opacity:0;pointer-events:none;z-index:-1;animation:map-focus-pulse 1.05s ease-out 3}
+@keyframes map-focus-pulse{0%{transform:translate(-50%,-50%) scale(.45);opacity:.35}75%{opacity:.12}100%{transform:translate(-50%,-50%) scale(2.35);opacity:0}}
+@media(prefers-reduced-motion:reduce){.map-marker.map-focus::before{animation:none}}
+
   .marker-icon{pointer-events:auto;
     width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     font-size:21px;border:3px solid #fff;box-shadow:0 0 0 3px rgba(0,0,0,.28),0 4px 14px rgba(0,0,0,.9)
@@ -1039,6 +1044,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     }
   }
 
+  let focusedMarkerId=null,focusUntil=0;
   function renderMarkers(rect){
     markersLayer.style.width=stage.clientWidth+'px';
     markersLayer.style.height=stage.clientHeight+'px';
@@ -1052,6 +1058,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       el.style.top=(rect.top+m.y*rect.size)+'px';
       const meta=MARKER_META[m.type]||MARKER_META.marker;
       el.classList.toggle('object-text',m.type==='text');
+      el.classList.toggle('map-focus',m.id===focusedMarkerId&&Date.now()<focusUntil);
       el.style.setProperty('--object-color',m.color||meta.color);
       el.style.fontSize=(m.size||24)+'px';
       el.innerHTML=`<div class="marker-icon" style="background:${m.color||meta.color};width:${m.size||32}px;height:${m.size||32}px;font-size:${Math.round((m.size||32)*.5)}px">${escapeHtml(m.icon||meta.icon)}</div>${(m.showLabel!==false||m.type==='text')&&m.name?`<div class="marker-label">${escapeHtml(m.name)}</div>`:''}`;
@@ -1105,7 +1112,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     box.replaceChildren();
     for(const m of all.filter(x=>((x.name||'')+' '+(x.note||'')).toLowerCase().includes(q))){
       const b=document.createElement('button');b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
-      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden')};box.appendChild(b);
+      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusedMarkerId=m.id;focusUntil=Date.now()+3400;renderMarkers(mapRect());setTimeout(()=>{if(focusedMarkerId===m.id&&Date.now()>=focusUntil){focusedMarkerId=null;renderMarkers(mapRect())}},3450)};box.appendChild(b);
     }
   }
   document.getElementById('objectSearch').addEventListener('input',renderObjectList);
