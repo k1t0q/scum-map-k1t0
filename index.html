@@ -495,12 +495,10 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   <h3 id="markerPopupTitle">Новая метка</h3><div id="markerPopupHint" style="font-size:10px;color:#89969e;margin:-4px 0 7px"></div>
   <label>Тип</label>
   <select id="markerType">
-    <option value="base">🏠 База</option>
+    <option value="base">🏠 Вражеская база</option>
     <option value="stash">📦 Схрон</option>
-    <option value="enemy">🔴 Вражеская база</option>
     <option value="vehicle">🚗 Транспорт</option>
     <option value="marker">📍 Маркер</option>
-    <option value="text">T Текст</option>
   </select>
   <label>Название</label>
   <input id="markerName" placeholder="Например: Схрон у дороги">
@@ -1009,7 +1007,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     const viewer=document.getElementById('markerViewer');
     document.getElementById('markerViewerTitle').textContent=m.name||'Без названия';
     const meta=MARKER_META[m.type]||MARKER_META.temp;
-    document.getElementById('markerViewerType').textContent=(m.icon||meta.icon||'')+' '+({base:'База',stash:'Схрон',enemy:'Вражеская база',vehicle:'Транспорт',marker:'Маркер',text:'Текст'}[m.type]||'Объект');
+    document.getElementById('markerViewerType').textContent=(m.icon||meta.icon||'')+' '+({base:'Вражеская база',stash:'Схрон',enemy:'Вражеская база',vehicle:'Транспорт',marker:'Маркер',text:'Текст'}[m.type]||'Объект');
     const note=document.getElementById('markerViewerNote');
     note.textContent=m.note?.trim()||'Комментарий не добавлен';
     note.style.color=m.note?.trim()?'#e4ecef':'#85939c';
@@ -1045,7 +1043,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     editingMarkerId=existing?existing.id:null;
     document.getElementById('markerPopupTitle').textContent=(existing?'Редактировать метку':'Новая метка');
     document.getElementById('markerPopupHint').textContent=existing?'Клик по метке открывает это окно. Нажми «УДАЛИТЬ», чтобы убрать её. ПКМ по метке — быстрое удаление.':'Укажи название, описание и параметры метки.';
-    markerType.value=existing?existing.type:'enemy';
+    markerType.value=existing?(existing.type==='enemy'?'base':existing.type==='text'?'marker':existing.type):'base';
     markerName.value=existing?existing.name:'';
     markerNote.value=existing?existing.note:'';
     objectIcon.value=existing?.icon||'';objectColor.value=existing?.color||MARKER_META[markerType.value]?.color||'#e25555';objectSize.value=existing?.size||32;objectSizeVal.value=objectSize.value;objectShowLabel.checked=existing?.showLabel!==false;objectLocked.checked=!!existing?.locked;renderObjectIcons();
