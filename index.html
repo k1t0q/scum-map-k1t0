@@ -412,6 +412,17 @@ html.hub-embed .profile-block,
 html.hub-embed .scum-default-group{display:none!important}
 html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type{border:0!important}
 html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-head{pointer-events:none!important}
+</style><style>
+.object-icon-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:5px 0}
+.object-icon-grid button{background:#16231d;border:1px solid #395149;border-radius:5px;color:white;min-height:30px;cursor:pointer}
+.object-icon-grid button.active{border-color:#5ee09b;background:#23503c}
+.object-editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.object-editor-row input[type=color]{height:35px;padding:2px}
+.object-check{display:flex!important;align-items:center;gap:8px}.object-check input{width:auto!important}
+.object-list-wrap{border-top:1px solid #274039;margin-top:15px;padding-top:10px}
+.object-search{width:100%;background:#0d151b;color:#fff;border:1px solid #33413c;border-radius:6px;padding:9px;margin:8px 0}
+.object-list{max-height:220px;overflow:auto}.object-list button{display:block;text-align:left;width:100%;background:#12201b;color:#dcebe2;border:1px solid #284037;border-radius:6px;margin-bottom:5px;padding:8px;cursor:pointer;overflow-wrap:anywhere}
+.map-marker.object-text .marker-label{font-size:inherit}.map-marker.object-text .marker-icon{display:none!important}
+.map-marker.object-text .marker-label{position:relative!important;background:rgba(0,0,0,.65);padding:4px 6px;color:var(--object-color,#fff)!important;display:block!important}
 </style><script>if(new URLSearchParams(location.search).get('hub')==='1')document.documentElement.classList.add('hub-embed');</script></head>
 <body>
 <div class="control-rail"></div>
@@ -462,7 +473,8 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
         </div>
       </div>
       
-      <button id="addMarkerBtn" class="add-marker-btn">＋ ДОБАВИТЬ МЕТКУ</button>
+      <button id="addMarkerBtn" class="add-marker-btn">＋ ДОБАВИТЬ ОБЪЕКТ</button>
+      <div class="object-list-wrap"><div class="filter-head">ОБЪЕКТЫ (<span id="objectCount">0</span>)</div><input id="objectSearch" class="object-search" placeholder="Поиск по названию, описанию"><div id="objectList" class="object-list"></div></div>
     </div>
   </section>
 </aside>
@@ -481,11 +493,22 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     <option value="stash">📦 Схрон</option>
     <option value="enemy">🔴 Вражеская база</option>
     <option value="vehicle">🚗 Транспорт</option>
+    <option value="marker">📍 Маркер</option>
+    <option value="text">T Текст</option>
   </select>
   <label>Название</label>
   <input id="markerName" placeholder="Например: Схрон у дороги">
-  <label>Комментарий</label>
-  <textarea id="markerNote" placeholder="Любая заметка..."></textarea>
+  <label>Описание / комментарий</label>
+  <textarea id="markerNote" placeholder="Описание объекта..."></textarea>
+  <div class="map-object-editor">
+    <label>Иконка
+      <div id="objectIconGrid" class="object-icon-grid"></div>
+      <input id="objectIcon" maxlength="8" placeholder="Свой символ / эмодзи">
+    </label>
+    <div class="object-editor-row"><label>Цвет<input id="objectColor" type="color" value="#e25555"></label><label>Размер <output id="objectSizeVal">32</output><input id="objectSize" type="range" min="14" max="70" value="32"></label></div>
+    <label class="object-check"><input id="objectShowLabel" type="checkbox" checked> Показывать название</label>
+    <label class="object-check"><input id="objectLocked" type="checkbox"> Закрепить объект</label>
+  </div>
   <div class="popup-actions">
     <button id="saveMarker" class="save-marker">СОХРАНИТЬ</button>
     <button id="deleteMarker" class="delete-marker">УДАЛИТЬ</button>
@@ -580,13 +603,13 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   let addMarkerMode=false;
   let editingMarkerId=null;
   let pendingMarkerNorm=null;
-  let markerFilters={base:true,stash:true,enemy:true,vehicle:true};
+  let markerFilters={base:true,stash:true,enemy:true,vehicle:true,marker:true,text:true};
 
   const MARKER_META={
     base:{icon:'🏠',color:'#57c46b'},
     stash:{icon:'📦',color:'#d4a94b'},
     enemy:{icon:'⚠️',color:'#e25555'},
-    vehicle:{icon:'🚗',color:'#4aa5e6'}};
+    vehicle:{icon:'🚗',color:'#4aa5e6'},marker:{icon:'📍',color:'#e25555'},text:{icon:'T',color:'#ffffff'}};
   const SCUM_MARKERS={
     brenor:[
       {name:'Бренор C4',x:446131.531,y:263265.812,z:18232.553},
@@ -948,8 +971,11 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       el.className='map-marker';
       el.style.left=(rect.left+m.x*rect.size)+'px';
       el.style.top=(rect.top+m.y*rect.size)+'px';
-      const meta=MARKER_META[m.type]||MARKER_META.temp;
-      el.innerHTML=`<div class="marker-icon" style="background:${meta.color}">${meta.icon}</div>${m.name?`<div class="marker-label">${escapeHtml(m.name)}</div>`:''}`;
+      const meta=MARKER_META[m.type]||MARKER_META.marker;
+      el.classList.toggle('object-text',m.type==='text');
+      el.style.setProperty('--object-color',m.color||meta.color);
+      el.style.fontSize=(m.size||24)+'px';
+      el.innerHTML=`<div class="marker-icon" style="background:${m.color||meta.color};width:${m.size||32}px;height:${m.size||32}px;font-size:${Math.round((m.size||32)*.5)}px">${escapeHtml(m.icon||meta.icon)}</div>${(m.showLabel!==false||m.type==='text')&&m.name?`<div class="marker-label">${escapeHtml(m.name)}</div>`:''}`;
       el.addEventListener('click',e=>{
         e.stopPropagation();
         showMarkerDetails(m);
@@ -977,7 +1003,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     const viewer=document.getElementById('markerViewer');
     document.getElementById('markerViewerTitle').textContent=m.name||'Без названия';
     const meta=MARKER_META[m.type]||MARKER_META.temp;
-    document.getElementById('markerViewerType').textContent=(meta.icon||'')+' '+({base:'База',stash:'Схрон',enemy:'Вражеская база',vehicle:'Транспорт'}[m.type]||'Метка');
+    document.getElementById('markerViewerType').textContent=(m.icon||meta.icon||'')+' '+({base:'База',stash:'Схрон',enemy:'Вражеская база',vehicle:'Транспорт',marker:'Маркер',text:'Текст'}[m.type]||'Объект');
     const note=document.getElementById('markerViewerNote');
     note.textContent=m.note?.trim()||'Комментарий не добавлен';
     note.style.color=m.note?.trim()?'#e4ecef':'#85939c';
@@ -989,7 +1015,26 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     viewer.style.top='50%';
   }
 
-  function openMarkerPopup(nx,ny,existing=null){
+  const objectIcon=document.getElementById('objectIcon'),objectColor=document.getElementById('objectColor'),objectSize=document.getElementById('objectSize'),objectSizeVal=document.getElementById('objectSizeVal'),objectShowLabel=document.getElementById('objectShowLabel'),objectLocked=document.getElementById('objectLocked');
+  const OBJECT_ICONS=['📍','🏠','🏪','⛽','🚗','🔫','💊','🍖','💧','⚠️','☠️','⭐','🏁','🎯','📦','🛡️','✈️','⚓'];
+  function renderObjectIcons(){
+    const grid=document.getElementById('objectIconGrid');grid.replaceChildren();
+    for(const icon of OBJECT_ICONS){const b=document.createElement('button');b.type='button';b.textContent=icon;b.classList.toggle('active',objectIcon.value===icon);b.onclick=()=>{objectIcon.value=icon;renderObjectIcons()};grid.appendChild(b)}
+  }
+  objectIcon.addEventListener('input',renderObjectIcons);
+  objectSize.addEventListener('input',()=>objectSizeVal.value=objectSize.value);
+  markerType.addEventListener('change',()=>{objectIcon.value=MARKER_META[markerType.value]?.icon||'📍';objectColor.value=MARKER_META[markerType.value]?.color||'#ffffff';renderObjectIcons()});
+  function renderObjectList(){
+    const all=getMarkers(),box=document.getElementById('objectList'),q=document.getElementById('objectSearch').value.toLowerCase();
+    document.getElementById('objectCount').textContent=all.length;
+    box.replaceChildren();
+    for(const m of all.filter(x=>((x.name||'')+' '+(x.note||'')).toLowerCase().includes(q))){
+      const b=document.createElement('button');b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
+      b.onclick=()=>{showMarkerDetails(m)};box.appendChild(b);
+    }
+  }
+  document.getElementById('objectSearch').addEventListener('input',renderObjectList);
+    function openMarkerPopup(nx,ny,existing=null){
     pendingMarkerNorm={x:nx,y:ny};
     editingMarkerId=existing?existing.id:null;
     document.getElementById('markerPopupTitle').textContent=(existing?'Редактировать метку':'Новая метка')+' · '+currentProfile;
@@ -997,6 +1042,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     markerType.value=existing?existing.type:'enemy';
     markerName.value=existing?existing.name:'';
     markerNote.value=existing?existing.note:'';
+    objectIcon.value=existing?.icon||'';objectColor.value=existing?.color||MARKER_META[markerType.value]?.color||'#e25555';objectSize.value=existing?.size||32;objectSizeVal.value=objectSize.value;objectShowLabel.checked=existing?.showLabel!==false;objectLocked.checked=!!existing?.locked;renderObjectIcons();
     deleteMarkerBtn.style.display=existing?'block':'none';
     markerPopup.classList.remove('hidden');
 
@@ -1040,21 +1086,24 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       type:markerType.value,
       name:markerName.value.trim(),
       note:markerNote.value.trim(),
+      icon:objectIcon.value.trim()||MARKER_META[markerType.value]?.icon||'📍',color:objectColor.value,size:Number(objectSize.value),showLabel:objectShowLabel.checked,locked:objectLocked.checked,
       updatedAt:Date.now()
     };
     const idx=arr.findIndex(x=>x.id===item.id);
     if(idx>=0) arr[idx]=item; else arr.push(item);
     setMarkers(arr);
+    renderObjectList();
     closeMarkerPopup();
     renderMarkers(mapRect());
     schedule();
-    showToast('Метка сохранена');
+    showToast('Объект сохранён');
   });
 
   deleteMarkerBtn.addEventListener('click',()=>{
     if(!editingMarkerId) return;
     if(!confirm('Удалить эту метку?')) return;
     setMarkers(getMarkers().filter(x=>x.id!==editingMarkerId));
+    renderObjectList();
     closeMarkerPopup();
     renderMarkers(mapRect());
     schedule();
@@ -1705,6 +1754,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   window.addEventListener('resize',schedule);
 
   fb.addEventListener('load',()=>{schedule()});
+  renderObjectList();
   schedule();
 })();
 </script>
