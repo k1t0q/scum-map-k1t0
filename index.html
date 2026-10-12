@@ -1164,7 +1164,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   document.getElementById('objectSearch').addEventListener('input',renderObjectList);
     let hubMarkerPosts=[];
   window.addEventListener('message',e=>{
-    if(e.origin!=='https://k1t0q.github.io'||e.data?.kind!=='scumHubMarkerPosts'||!Array.isArray(e.data.posts))return;
+    if(!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumHubMarkerPosts'||!Array.isArray(e.data.posts))return;
     hubMarkerPosts=e.data.posts;
     if(editingMarkerId){const m=getMarkers().find(x=>x.id===editingMarkerId);if(m)renderHubMarkerPosts(m)}
   });
@@ -1199,7 +1199,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     if(photos.length){e.preventDefault();addMarkerPhotos(photos)}
   });
   window.addEventListener('message',e=>{
-    if(!hubSharedMode||e.origin!=='https://k1t0q.github.io'||e.data?.kind!=='scumMapPostResult')return;
+    if(!hubSharedMode||!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumMapPostResult')return;
     const btn=document.getElementById('saveMarker');btn.disabled=false;btn.textContent='СОХРАНИТЬ';
     if(e.data.ok){markerDraftFiles=[];renderDraftPhotos();closeMarkerPopup();showToast('Метка и фото сохранены')}
     else showToast(e.data.error||'Ошибка загрузки фото');
