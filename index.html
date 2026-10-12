@@ -517,6 +517,12 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     <label class="object-check"><input id="objectLocked" type="checkbox"> Закрепить объект</label>
   </div>
   <div id="hubMarkerPosts" class="hub-marker-posts" hidden></div>
+  <div id="hubMarkerCompose" class="hub-marker-posts" hidden>
+    <h4>ДОБАВИТЬ ПУБЛИКАЦИЮ</h4>
+    <textarea id="hubPostComment" placeholder="Комментарий к базе..." rows="2"></textarea>
+    <label>Прикрепить фото (до 5)<input id="hubPostFiles" type="file" accept="image/*" multiple></label>
+    <button id="hubPostSend" type="button" class="save-marker" style="width:100%;min-height:36px;margin-top:8px">ОПУБЛИКОВАТЬ</button>
+  </div>
   <div class="popup-actions">
     <button id="saveMarker" class="save-marker">СОХРАНИТЬ</button>
     <button id="deleteMarker" class="delete-marker">УДАЛИТЬ</button>
@@ -1077,11 +1083,28 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     hubMarkerPosts=e.data.posts;
     if(editingMarkerId){const m=getMarkers().find(x=>x.id===editingMarkerId);if(m)renderHubMarkerPosts(m)}
   });
+  document.getElementById('hubPostSend').addEventListener('click',()=>{
+    const marker=getMarkers().find(m=>m.id===editingMarkerId);
+    if(!marker)return;
+    const files=Array.from(document.getElementById('hubPostFiles').files||[]).slice(0,5);
+    const comment=document.getElementById('hubPostComment').value.trim();
+    if(!comment&&!files.length){showToast('Добавь комментарий или фото');return}
+    const btn=document.getElementById('hubPostSend');
+    btn.disabled=true;btn.textContent='ЗАГРУЗКА…';
+    parent.postMessage({kind:'scumMapCreatePost',marker:marker.name,markerId:marker.id,comment,files},'https://k1t0q.github.io');
+  });
+  window.addEventListener('message',e=>{
+    if(!hubSharedMode||e.origin!=='https://k1t0q.github.io'||e.data?.kind!=='scumMapPostResult')return;
+    const btn=document.getElementById('hubPostSend');btn.disabled=false;btn.textContent='ОПУБЛИКОВАТЬ';
+    if(e.data.ok){document.getElementById('hubPostComment').value='';document.getElementById('hubPostFiles').value='';showToast('Публикация добавлена')}
+    else showToast(e.data.error||'Не удалось опубликовать');
+  });
   function renderHubMarkerPosts(m){
     const box=document.getElementById('hubMarkerPosts');
     box.replaceChildren();
     const posts=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m?.name?.trim().toLocaleLowerCase('ru'));
     box.hidden=!posts.length;
+    document.getElementById('hubMarkerCompose').hidden=!hubSharedMode||!m;
     if(!posts.length)return;
     const title=document.createElement('h4');title.textContent='ФОТО И ПУБЛИКАЦИИ';box.appendChild(title);
     for(const p of posts){
