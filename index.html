@@ -130,6 +130,7 @@
     border-radius:14px;padding:12px;box-shadow:0 14px 36px rgba(0,0,0,.55)
   }
   .marker-popup.hidden{display:none}
+  .marker-popup{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
   .marker-popup h3{margin:0 0 9px;font-size:14px}
   .marker-popup label{display:block;font-size:11px;color:#9ca9b1;margin:7px 0 4px}
   .marker-popup input,.marker-popup select,.marker-popup textarea{
@@ -984,7 +985,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       const screenX=sr.left+rect.left+nx*rect.size;
       const screenY=sr.top+rect.top+ny*rect.size;
       const px=Math.min(window.innerWidth-330,Math.max(10,screenX+12));
-      const py=Math.min(window.innerHeight-260,Math.max(10,screenY+12));
+      const popupHeight=markerPopup.offsetHeight; const py=Math.min(Math.max(10,window.innerHeight-popupHeight-12),Math.max(10,screenY+12));
       markerPopup.style.left=px+'px';
       markerPopup.style.top=py+'px';
     }else{
