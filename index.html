@@ -403,7 +403,7 @@
   }
 
 </style>
-</head>
+<style>html.hub-embed .drawer-title,html.hub-embed .drawer-section:first-of-type,html.hub-embed .profile-block,html.hub-embed .drawer-section:nth-of-type(2) .subgroup:first-of-type,html.hub-embed .drawer-section:nth-of-type(2) .subgroup-body,html.hub-embed #markerPopup label:has(+ #markerType),html.hub-embed #markerType{display:none!important}html.hub-embed .drawer-section:nth-of-type(2) .subgroup{border:0!important}html.hub-embed .drawer-section:nth-of-type(2) .subgroup-head{pointer-events:none!important}</style><script>if(new URLSearchParams(location.search).get('hub')==='1')document.documentElement.classList.add('hub-embed');</script></head>
 <body>
 <div class="control-rail"></div>
 
@@ -444,7 +444,7 @@
       </div>
 
       <div class="subgroup">
-        <button class="subgroup-head" type="button"><span>НАШИ МЕТКИ</span><span class="chev">⌃</span></button>
+        <button class="subgroup-head" type="button"><span>НАША МЕТКА</span><span class="chev">⌃</span></button>
         <div class="subgroup-body">
           <label class="filter-row"><input type="checkbox" data-filter="base" checked> 🏠 Базы</label>
           <label class="filter-row"><input type="checkbox" data-filter="stash" checked> 📦 Схроны</label>
@@ -966,7 +966,7 @@
     editingMarkerId=existing?existing.id:null;
     document.getElementById('markerPopupTitle').textContent=(existing?'Редактировать метку':'Новая метка')+' · '+currentProfile;
     document.getElementById('markerPopupHint').textContent=existing?'Клик по метке открывает это окно. Нажми «УДАЛИТЬ», чтобы убрать её. ПКМ по метке — быстрое удаление.':'Метка сохранится только в текущем профиле: '+currentProfile;
-    markerType.value=existing?existing.type:'stash';
+    markerType.value=document.documentElement.classList.contains('hub-embed')?'enemy':(existing?existing.type:'stash');
     markerName.value=existing?existing.name:'';
     markerNote.value=existing?existing.note:'';
     deleteMarkerBtn.style.display=existing?'block':'none';
