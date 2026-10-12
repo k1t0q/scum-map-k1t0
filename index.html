@@ -957,8 +957,9 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   window.addEventListener('message',e=>{
     if(!hubSharedMode||e.origin!=='https://k1t0q.github.io'||e.data?.kind!=='scumMapSharedMarkers')return;
     if(!Array.isArray(e.data.markers))return;
-    sharedMarkers=e.data.markers.map(m=>({...m,showLabel:m.show_label,locked:m.locked}));
-    if(sharedMarkers.length)localStorage.setItem('scumHubSharedMapBackup',JSON.stringify(sharedMarkers));
+    const fromServer=e.data.markers.map(m=>({...m,showLabel:m.show_label,locked:m.locked}));
+    sharedMarkers=fromServer.length?fromServer:readLocalBackup();
+    if(fromServer.length)localStorage.setItem('scumHubSharedMapBackup',JSON.stringify(fromServer));
     sharedReady=true;
     renderObjectList();renderMarkers(mapRect());schedule();
   });
