@@ -421,6 +421,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
 #markerPopup .object-editor-row>*{min-width:0}
 #markerPopup input[type=range]{width:100%;max-width:100%;min-width:0}
 #markerPopup .popup-actions button{min-width:0}
+.hub-marker-posts{margin-top:12px;padding-top:10px;border-top:1px solid #314139}.hub-marker-posts h4{font-size:12px;margin:0 0 8px}.hub-marker-post{border:1px solid #30443a;border-radius:8px;padding:9px;background:#11211b;margin-bottom:8px}.hub-marker-post small{color:#9ca9b1}.hub-marker-post p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5}.hub-marker-photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.hub-marker-photos img{width:70px;height:60px;object-fit:cover;border-radius:6px;cursor:zoom-in}
 .object-icon-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:5px 0}
 .object-icon-grid button{background:#16231d;border:1px solid #395149;border-radius:5px;color:white;min-height:30px;cursor:pointer}
 .object-icon-grid button.active{border-color:#5ee09b;background:#23503c}
@@ -515,6 +516,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     <label class="object-check"><input id="objectShowLabel" type="checkbox" checked> Показывать название</label>
     <label class="object-check"><input id="objectLocked" type="checkbox"> Закрепить объект</label>
   </div>
+  <div id="hubMarkerPosts" class="hub-marker-posts" hidden></div>
   <div class="popup-actions">
     <button id="saveMarker" class="save-marker">СОХРАНИТЬ</button>
     <button id="deleteMarker" class="delete-marker">УДАЛИТЬ</button>
@@ -1036,7 +1038,32 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     }
   }
   document.getElementById('objectSearch').addEventListener('input',renderObjectList);
-    function openMarkerPopup(nx,ny,existing=null){
+    let hubMarkerPosts=[];
+  window.addEventListener('message',e=>{
+    if(e.origin!=='https://k1t0q.github.io'||e.data?.kind!=='scumHubMarkerPosts'||!Array.isArray(e.data.posts))return;
+    hubMarkerPosts=e.data.posts;
+    if(editingMarkerId){const m=getMarkers().find(x=>x.id===editingMarkerId);if(m)renderHubMarkerPosts(m)}
+  });
+  function renderHubMarkerPosts(m){
+    const box=document.getElementById('hubMarkerPosts');
+    box.replaceChildren();
+    const posts=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m?.name?.trim().toLocaleLowerCase('ru'));
+    box.hidden=!posts.length;
+    if(!posts.length)return;
+    const title=document.createElement('h4');title.textContent='ФОТО И ПУБЛИКАЦИИ';box.appendChild(title);
+    for(const p of posts){
+      const card=document.createElement('div');card.className='hub-marker-post';
+      const info=document.createElement('small');info.textContent=(p.author||'Участник')+(p.date?' · '+new Date(p.date).toLocaleDateString('ru-RU'):'');card.appendChild(info);
+      if(p.comment){const desc=document.createElement('p');desc.textContent=p.comment;card.appendChild(desc)}
+      const photos=document.createElement('div');photos.className='hub-marker-photos';
+      for(const url of (p.images||[])){
+        if(typeof url!=='string'||!url.startsWith('https://'))continue;
+        const img=document.createElement('img');img.src=url;img.alt='Фото базы';img.loading='lazy';img.onclick=()=>window.open(url,'_blank','noopener');photos.appendChild(img);
+      }
+      card.appendChild(photos);box.appendChild(card);
+    }
+  }
+  function openMarkerPopup(nx,ny,existing=null){
     pendingMarkerNorm={x:nx,y:ny};
     editingMarkerId=existing?existing.id:null;
     document.getElementById('markerPopupTitle').textContent=(existing?'Редактировать метку':'Новая метка');
@@ -1046,6 +1073,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     markerNote.value=existing?existing.note:'';
     objectIcon.value=existing?.icon||'';objectColor.value=existing?.color||MARKER_META[markerType.value]?.color||'#e25555';objectSize.value=existing?.size||32;objectSizeVal.value=objectSize.value;objectShowLabel.checked=existing?.showLabel!==false;objectLocked.checked=!!existing?.locked;renderObjectIcons();
     deleteMarkerBtn.style.display=existing?'block':'none';
+    renderHubMarkerPosts(existing||null);
     markerPopup.classList.remove('hidden');
 
     // Always keep the editor fully inside the iframe viewport.
