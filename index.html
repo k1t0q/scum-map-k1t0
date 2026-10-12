@@ -1115,7 +1115,19 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   document.getElementById('mapPhotoFull').addEventListener('click',e=>{const img=e.currentTarget;if(!img.classList.contains('zoomed')){const rect=img.getBoundingClientRect();img.style.transformOrigin=((e.clientX-rect.left)/rect.width*100)+'% '+((e.clientY-rect.top)/rect.height*100)+'%';}img.classList.toggle('zoomed')});
   document.getElementById('mapPhotoLightbox').addEventListener('click',e=>{if(e.target.id==='mapPhotoLightbox')closeMapPhoto()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMapPhoto()});
+  function focusMapMarker(m){
+    if(!m?.id)return;
+    focusedMarkerId=m.id;
+    const halo=document.getElementById('mapFocusOverlay');
+    halo.style.display='block';
+    halo.style.setProperty('--pulse-color',m.color||MARKER_META[m.type]?.color||'#e25555');
+    halo.classList.remove('active');
+    void halo.offsetWidth;
+    halo.classList.add('active');
+    renderMarkers(mapRect());
+  }
   function showMarkerDetails(m){
+    focusMapMarker(m);
     const viewer=document.getElementById('markerViewer');
     document.getElementById('markerViewerTitle').textContent=m.name||'Без названия';
     const meta=MARKER_META[m.type]||MARKER_META.temp;
@@ -1159,7 +1171,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     box.replaceChildren();
     for(const m of all.filter(x=>((x.name||'')+' '+(x.note||'')).toLowerCase().includes(q))){
       const b=document.createElement('button');b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
-      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusedMarkerId=m.id;const halo=document.getElementById('mapFocusOverlay');halo.style.display='block';halo.style.setProperty('--pulse-color',m.color||MARKER_META[m.type]?.color||'#e25555');halo.classList.remove('active');void halo.offsetWidth;halo.classList.add('active');renderMarkers(mapRect())};box.appendChild(b);
+      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusMapMarker(m)};box.appendChild(b);
     }
   }
   document.getElementById('objectSearch').addEventListener('input',renderObjectList);
@@ -1226,6 +1238,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     }
   }
   function openMarkerPopup(nx,ny,existing=null){
+    if(existing)focusMapMarker(existing);
     pendingMarkerNorm={x:nx,y:ny};
     editingMarkerId=existing?existing.id:null;
     document.getElementById('markerPopupTitle').textContent=(existing?'Редактировать метку':'Новая метка');
