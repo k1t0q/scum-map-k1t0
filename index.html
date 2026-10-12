@@ -406,6 +406,7 @@
 </style>
 <style>
 html.hub-embed .drawer-title{display:block!important}
+html.hub-embed #status{display:none!important}
 html.hub-embed #stage{transition:none!important}
 @media(min-width:769px){html.hub-embed #stage.drawer-open{left:64px!important}}
 html.hub-embed .profile-block,
@@ -984,16 +985,6 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
         e.stopPropagation();
         showMarkerDetails(m);
       });
-      el.addEventListener('contextmenu',e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        if(confirm(`Удалить метку "${m.name || 'Без названия'}"?`)){
-          setMarkers(getMarkers().filter(x=>x.id!==m.id));
-          renderMarkers(mapRect());
-          schedule();
-          showToast('Метка удалена');
-        }
-      });
       markersLayer.appendChild(el);
     }
     renderScumMarkers(rect);
@@ -1042,7 +1033,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     pendingMarkerNorm={x:nx,y:ny};
     editingMarkerId=existing?existing.id:null;
     document.getElementById('markerPopupTitle').textContent=(existing?'Редактировать метку':'Новая метка');
-    document.getElementById('markerPopupHint').textContent=existing?'Клик по метке открывает это окно. Нажми «УДАЛИТЬ», чтобы убрать её. ПКМ по метке — быстрое удаление.':'Укажи название, описание и параметры метки.';
+    document.getElementById('markerPopupHint').textContent=existing?'Для удаления метки используй кнопку «УДАЛИТЬ» в редакторе.':'Укажи название, описание и параметры метки.';
     markerType.value=existing?(existing.type==='enemy'?'base':existing.type==='text'?'marker':existing.type):'base';
     markerName.value=existing?existing.name:'';
     markerNote.value=existing?existing.note:'';
