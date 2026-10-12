@@ -436,11 +436,11 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
  #markerPopup{padding:10px 13px!important;max-height:calc(100dvh - 16px)!important;overflow-x:hidden!important;overflow-y:auto!important}
  #markerPopup h3{margin:0 0 3px!important;font-size:13px!important}
  #markerPopupHint{font-size:10px!important;line-height:1.25!important;margin:0 0 5px!important}
- #markerPopup label{margin:6px 0 3px!important;font-size:11px!important;line-height:1.25!important}
- #markerPopup input:not([type=color]):not([type=range]):not([type=checkbox]):not([type=file]),#markerPopup select{padding:6px 8px!important;min-height:31px!important;font-size:12px!important}
- #markerPopup textarea{min-height:51px!important;height:51px!important;padding:7px!important;resize:none!important}
+ #markerPopup label{margin:8px 0 4px!important;font-size:11px!important;line-height:1.25!important}
+ #markerPopup input:not([type=color]):not([type=range]):not([type=checkbox]):not([type=file]),#markerPopup select{padding:6px 8px!important;min-height:35px!important;font-size:12px!important}
+ #markerPopup textarea{min-height:61px!important;height:61px!important;padding:7px!important;resize:none!important}
  #markerPopup .object-icon-grid{grid-template-columns:repeat(9,minmax(0,1fr));gap:4px!important;margin:5px 0!important}
- #markerPopup .object-icon-grid button{min-height:27px!important;font-size:15px!important}
+ #markerPopup .object-icon-grid button{min-height:30px!important;font-size:16px!important}
  #markerPopup .object-editor-row{gap:9px!important;margin-top:4px!important}
  #markerPopup input[type=color]{height:28px!important}
  #markerPopup input[type=range]{margin-top:3px!important}
@@ -551,8 +551,8 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       <input id="objectIcon" maxlength="8" placeholder="Свой символ / эмодзи">
     </label>
     <div class="object-editor-row"><label>Цвет<input id="objectColor" type="color" value="#e25555"></label><label>Размер <output id="objectSizeVal">32</output><input id="objectSize" type="range" min="14" max="70" value="32"></label></div>
-    <label class="object-check"><input id="objectShowLabel" type="checkbox" checked> Показывать название</label>
-    <label class="object-check"><input id="objectLocked" type="checkbox"> Закрепить объект</label>
+    <input id="objectShowLabel" type="checkbox" checked hidden>
+    <input id="objectLocked" type="checkbox" hidden>
   </div>
   <div id="hubMarkerPosts" class="hub-marker-posts" hidden></div>
   <div id="hubMarkerCompose" class="hub-marker-posts">
@@ -1196,7 +1196,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     markerType.value=existing?(existing.type==='enemy'?'base':existing.type==='text'?'marker':existing.type):'base';
     markerName.value=existing?existing.name:'';
     markerNote.value=existing?existing.note:'';
-    objectIcon.value=existing?.icon||'';objectColor.value=existing?.color||MARKER_META[markerType.value]?.color||'#e25555';objectSize.value=existing?.size||32;objectSizeVal.value=objectSize.value;objectShowLabel.checked=existing?.showLabel!==false;objectLocked.checked=!!existing?.locked;renderObjectIcons();
+    objectIcon.value=existing?.icon||'';objectColor.value=existing?.color||MARKER_META[markerType.value]?.color||'#e25555';objectSize.value=existing?.size||32;objectSizeVal.value=objectSize.value;objectShowLabel.checked=true;objectLocked.checked=false;renderObjectIcons();
     deleteMarkerBtn.style.display=existing?'block':'none';
     markerDraftFiles=[];renderDraftPhotos();
     renderHubMarkerPosts(existing||null);
