@@ -312,6 +312,12 @@
 
 
   @media (max-width:768px){
+    #markerPopup #hubMarkerPosts:not([hidden]), #markerPopup #hubMarkerCompose:not([hidden]){display:block!important}
+    #markerPopup .hub-marker-photos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+    #markerPopup .hub-marker-photos img{width:100%;height:56px;object-fit:cover}
+    #markerPopup .hub-marker-posts{margin:9px 0;padding:8px 0}
+    #markerPopup .hub-file-label{display:block}
+    #markerPopup #hubPostFiles{max-width:100%}
     /* On mobile the map itself has pinch/pan, so desktop zoom controls are unnecessary. */
     .zoom{display:none!important}
 
@@ -1223,8 +1229,19 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     objectIcon.value=existing?.icon||'';objectColor.value=existing?.color||MARKER_META[markerType.value]?.color||'#e25555';objectSize.value=existing?.size||32;objectSizeVal.value=objectSize.value;objectShowLabel.checked=true;objectLocked.checked=false;renderObjectIcons();
     deleteMarkerBtn.style.display=existing?'block':'none';
     markerDraftFiles=[];renderDraftPhotos();
+    // On phones, keep existing photos and photo picker above the icon palette.
+    const editor=markerPopup.querySelector('.map-object-editor');
+    const posts=document.getElementById('hubMarkerPosts');
+    const compose=document.getElementById('hubMarkerCompose');
+    const buttons=markerPopup.querySelector('.popup-actions');
+    if(window.matchMedia('(max-width:768px)').matches){
+      editor.before(posts,compose);
+    }else{
+      buttons.before(posts,compose);
+    }
     renderHubMarkerPosts(existing||null);
     markerPopup.classList.remove('hidden');
+    markerPopup.scrollTop=0;
 
     // Always keep the editor fully inside the iframe viewport.
     // Place it near the selected point when possible, otherwise flip it to the other side.
