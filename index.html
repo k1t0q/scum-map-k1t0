@@ -116,6 +116,9 @@
   .add-marker-btn.active{background:#315f36}
   .markers-layer{position:absolute;inset:0;pointer-events:none;z-index:40000}
   .map-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;z-index:1}
+#mapFocusOverlay{position:absolute;left:0;top:0;width:48px;height:48px;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:45000;display:none;border:3px solid var(--pulse-color,#e25555);box-shadow:0 0 0 6px color-mix(in srgb,var(--pulse-color,#e25555) 25%,transparent);background:color-mix(in srgb,var(--pulse-color,#e25555) 15%,transparent)}
+#mapFocusOverlay.active{display:block;animation:focus-ring-pulse 1s ease-in-out 3}
+@keyframes focus-ring-pulse{0%,100%{opacity:.32;box-shadow:0 0 0 5px color-mix(in srgb,var(--pulse-color) 20%,transparent)}50%{opacity:1;box-shadow:0 0 0 23px color-mix(in srgb,var(--pulse-color) 22%,transparent)}}
 .map-marker.map-focus{z-index:5}
 .map-marker.map-focus::before{content:"";position:absolute;left:50%;top:50%;width:48px;height:48px;border:2px solid var(--object-color,#e25555);background:var(--object-color,#e25555);border-radius:50%;transform:translate(-50%,-50%) scale(.45);opacity:0;pointer-events:none;z-index:-1;animation:map-focus-pulse 1.05s ease-out 3}
 @keyframes map-focus-pulse{0%{transform:translate(-50%,-50%) scale(.45);opacity:.35}75%{opacity:.12}100%{transform:translate(-50%,-50%) scale(2.35);opacity:0}}
@@ -577,7 +580,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
 
 <div id="stage">
   <div id="locationMarker"></div>
-  <div id="markersLayer" class="markers-layer"></div>
+  <div id="markersLayer" class="markers-layer"></div><div id="mapFocusOverlay" aria-hidden="true"></div>
   <div id="fallback"><img id="fallbackImg" class="fb" src="scum_map_fallback.png" alt="SCUM map fallback"></div>
   <div id="tiles"></div>
   <div id="traders"></div>
@@ -1050,6 +1053,12 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     markersLayer.style.height=stage.clientHeight+'px';
     markersLayer.innerHTML='';
     const markers=getMarkers();
+    const halo=document.getElementById('mapFocusOverlay');
+    if(focusedMarkerId&&Date.now()<focusUntil){
+      const fm=markers.find(m=>m.id===focusedMarkerId);
+      if(fm){halo.style.left=(rect.left+fm.x*rect.size)+'px';halo.style.top=(rect.top+fm.y*rect.size)+'px';}
+      else halo.style.display='none';
+    }
     for(const m of markers){
       if(markerFilters[m.type]===false) continue;
       const el=document.createElement('div');
@@ -1112,7 +1121,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     box.replaceChildren();
     for(const m of all.filter(x=>((x.name||'')+' '+(x.note||'')).toLowerCase().includes(q))){
       const b=document.createElement('button');b.textContent=(m.icon||MARKER_META[m.type]?.icon||'📍')+' '+(m.name||'Без названия');
-      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusedMarkerId=m.id;focusUntil=Date.now()+3400;renderMarkers(mapRect());setTimeout(()=>{if(focusedMarkerId===m.id&&Date.now()>=focusUntil){focusedMarkerId=null;renderMarkers(mapRect())}},3450)};box.appendChild(b);
+      b.onclick=()=>{stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();document.getElementById('markerViewer').classList.add('hidden');focusedMarkerId=m.id;focusUntil=Date.now()+3400;const halo=document.getElementById('mapFocusOverlay');halo.style.display='block';halo.style.setProperty('--pulse-color',m.color||MARKER_META[m.type]?.color||'#e25555');halo.classList.remove('active');void halo.offsetWidth;halo.classList.add('active');renderMarkers(mapRect());setTimeout(()=>{if(focusedMarkerId===m.id&&Date.now()>=focusUntil){focusedMarkerId=null;halo.classList.remove('active');halo.style.display='none'}},3450)};box.appendChild(b);
     }
   }
   document.getElementById('objectSearch').addEventListener('input',renderObjectList);
