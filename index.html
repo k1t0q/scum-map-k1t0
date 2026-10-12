@@ -476,6 +476,14 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
 #markerViewerPhotos img{display:block;width:100%!important;height:51px!important;min-width:0;object-fit:cover;border-radius:6px;cursor:zoom-in}
 #mapPhotoClose{position:absolute;right:18px;top:12px;color:#fff;background:#182128;border:1px solid #526168;border-radius:8px;font-size:28px;width:42px;height:42px;cursor:pointer}
 #markerViewerPhotos img{width:64px;height:54px;object-fit:cover;border-radius:6px;cursor:zoom-in}
+.enemy-nicks-edit,.enemy-nicks-view{border-top:1px solid #2a393e;padding-top:9px;margin:10px 0}
+.enemy-nicks-title{font-size:11px;font-weight:800;color:#adbbc3;margin-bottom:7px}
+.enemy-nicks-list{display:flex;flex-wrap:wrap;gap:6px;min-height:22px}
+.enemy-nick{display:inline-flex;align-items:center;gap:6px;padding:5px 7px;border:1px solid #395149;background:#12201b;border-radius:7px;color:#f2f5f4;font-size:12px;overflow-wrap:anywhere}
+.enemy-nick button{background:transparent;color:#eaa5a5;border:0;cursor:pointer;font-size:17px;padding:0 1px;line-height:1}
+.enemy-nicks-add{display:flex;gap:6px;margin-top:8px}
+#markerPopup .enemy-nicks-add input{flex:1;min-width:0;width:auto}
+.enemy-nicks-add button{background:#183721;color:#aef2b5;border:1px solid #3e7950;border-radius:7px;padding:5px 9px;font-size:11px;font-weight:800;cursor:pointer}
 .object-icon-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:5px 0}
 .object-icon-grid button{background:#16231d;border:1px solid #395149;border-radius:5px;color:white;min-height:30px;cursor:pointer}
 .object-icon-grid button.active{border-color:#5ee09b;background:#23503c}
@@ -546,6 +554,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
  <div id="markerViewerType" style="font-size:12px;color:#b8c9d0;margin-bottom:12px"></div>
  <div style="font-size:11px;color:#91a1ab;margin-bottom:5px">КОММЕНТАРИЙ</div>
  <div id="markerViewerNote" style="font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:16px"></div>
+ <div class="enemy-nicks-view"><div class="enemy-nicks-title">УЧАСТНИКИ ВРАЖЕСКОГО ОТРЯДА</div><div id="markerViewerNicks" class="enemy-nicks-list"></div></div>
  <div id="markerViewerPhotos" class="hub-marker-photos" style="margin:8px 0"></div>
  <div class="popup-actions"><button type="button" id="markerViewerEdit" class="save-marker">РЕДАКТИРОВАТЬ</button><button type="button" id="markerViewerClose" class="cancel-marker">ЗАКРЫТЬ</button></div>
 </div>
@@ -563,6 +572,11 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   <input id="markerName" placeholder="Например: Схрон у дороги">
   <label>Описание / комментарий</label>
   <textarea id="markerNote" placeholder="Описание объекта..."></textarea>
+  <div class="enemy-nicks-edit">
+    <div class="enemy-nicks-title">УЧАСТНИКИ ВРАЖЕСКОГО ОТРЯДА</div>
+    <div id="markerEditorNicks" class="enemy-nicks-list"></div>
+    <div class="enemy-nicks-add"><input id="markerNickInput" maxlength="60" placeholder="Ник противника"><button id="markerNickAdd" type="button">+ ДОБАВИТЬ</button></div>
+  </div>
   <div class="map-object-editor">
     <label>Иконка
       <div id="objectIconGrid" class="object-icon-grid"></div>
@@ -1126,9 +1140,26 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     halo.classList.add('active');
     renderMarkers(mapRect());
   }
+  function fillNickList(node,nicks,editable=false){
+    node.replaceChildren();
+    if(!nicks?.length){const empty=document.createElement('span');empty.textContent='Ники не добавлены';empty.style.cssText='color:#84959d;font-size:11px';node.appendChild(empty);return}
+    nicks.forEach((nick,i)=>{const chip=document.createElement('span');chip.className='enemy-nick';const name=document.createElement('span');name.textContent=nick;chip.appendChild(name);
+      if(editable){const del=document.createElement('button');del.type='button';del.textContent='×';del.title='Удалить участника';del.onclick=()=>{draftEnemyNicks.splice(i,1);renderEditorNicks()};chip.appendChild(del)}
+      node.appendChild(chip);
+    });
+  }
+  let draftEnemyNicks=[];
+  function renderEditorNicks(){fillNickList(document.getElementById('markerEditorNicks'),draftEnemyNicks,true)}
+  function addEnemyNick(){const input=document.getElementById('markerNickInput');const nick=input.value.trim();
+    if(nick&&!draftEnemyNicks.some(n=>n.toLowerCase()===nick.toLowerCase())&&draftEnemyNicks.length<50){draftEnemyNicks.push(nick);renderEditorNicks()}
+    input.value='';input.focus();
+  }
+  document.getElementById('markerNickAdd').onclick=addEnemyNick;
+  document.getElementById('markerNickInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addEnemyNick()}});
   function showMarkerDetails(m){
     focusMapMarker(m);
     const viewer=document.getElementById('markerViewer');
+    fillNickList(document.getElementById('markerViewerNicks'),m.enemyNicks||m.enemy_nicks||[]);
     document.getElementById('markerViewerTitle').textContent=m.name||'Без названия';
     const meta=MARKER_META[m.type]||MARKER_META.temp;
     document.getElementById('markerViewerType').textContent=(m.icon||meta.icon||'')+' '+({base:'Вражеская база',stash:'Схрон',enemy:'Вражеская база',vehicle:'Транспорт',marker:'Маркер',text:'Текст'}[m.type]||'Объект');
@@ -1240,6 +1271,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   function openMarkerPopup(nx,ny,existing=null){
     if(existing)focusMapMarker(existing);
     pendingMarkerNorm={x:nx,y:ny};
+    draftEnemyNicks=[...(existing?.enemyNicks||existing?.enemy_nicks||[])];renderEditorNicks();
     editingMarkerId=existing?existing.id:null;
     document.getElementById('markerPopupTitle').textContent=(existing?'Редактировать метку':'Новая метка');
     document.getElementById('markerPopupHint').textContent=existing?'Для удаления метки используй кнопку «УДАЛИТЬ» в редакторе.':'Укажи название, описание и параметры метки.';
@@ -1306,6 +1338,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       type:markerType.value,
       name:markerName.value.trim(),
       note:markerNote.value.trim(),
+      enemyNicks:[...draftEnemyNicks],
       icon:objectIcon.value.trim()||MARKER_META[markerType.value]?.icon||'📍',color:objectColor.value,size:Number(objectSize.value),showLabel:objectShowLabel.checked,locked:objectLocked.checked,
       updatedAt:Date.now()
     };
