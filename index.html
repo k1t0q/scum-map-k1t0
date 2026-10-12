@@ -998,6 +998,9 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   function markerStoreKey(){return 'scumMapMarkersProfile_'+safeProfileKey(currentProfile)}
   const hubSharedMode=document.documentElement.classList.contains('hub-embed');
   let sharedMarkers=[],sharedReady=false;
+  const allowedHubOrigins=new Set(['https://k1t0q.github.io','https://scumhub.layero.app','https://scum-squad-hub.layero.app']);
+  let hubParentOrigin=null;
+  function sendHubMessage(msg){if(hubSharedMode&&hubParentOrigin)parent.postMessage(msg,hubParentOrigin)}
   function getMarkers(){
     if(hubSharedMode) return sharedMarkers.length||sharedReady?sharedMarkers:readLocalBackup();
     try{return JSON.parse(localStorage.getItem(markerStoreKey())||'[]')}
@@ -1009,10 +1012,10 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     localStorage.setItem(markerStoreKey(),JSON.stringify(arr));
   }
   function notifyHub(action,marker,id){
-    if(hubSharedMode)parent.postMessage({kind:'scumMapMarkerAction',action,marker,id},'https://k1t0q.github.io');
+    if(hubSharedMode)sendHubMessage({kind:'scumMapMarkerAction',action,marker,id});
   }
   window.addEventListener('message',e=>{
-    if(!hubSharedMode||e.origin!=='https://k1t0q.github.io'||e.data?.kind!=='scumMapSharedMarkers')return;
+    if(!hubSharedMode||!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumMapSharedMarkers')return;
     if(!Array.isArray(e.data.markers))return;
     const fromServer=e.data.markers.map(m=>({...m,showLabel:m.show_label,locked:m.locked}));
     sharedMarkers=fromServer.length?fromServer:readLocalBackup();
@@ -1020,8 +1023,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     sharedReady=true;
     renderObjectList();renderMarkers(mapRect());schedule();
   });
-  if(hubSharedMode){
-    setTimeout(()=>{
+  function sendMapReady(){
       let local=[];try{
         for(const key of Object.keys(localStorage)){
           if(key.startsWith('scumMapMarkersProfile_')){
@@ -1032,9 +1034,13 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       }catch(e){}
       local.push(...readLocalBackup());
       local=[...new Map(local.filter(m=>m?.id).map(m=>[m.id,m])).values()];
-      parent.postMessage({kind:'scumMapReady',localMarkers:local},'https://k1t0q.github.io');
-    },350);
+      sendHubMessage({kind:'scumMapReady',localMarkers:local});
   }
+  window.addEventListener('message',e=>{
+    if(!hubSharedMode||e.source!==parent||!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumMapParentHello')return;
+    hubParentOrigin=e.origin;
+    sendMapReady();
+  });
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 
 
@@ -1296,7 +1302,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     renderObjectList();
     if(hubSharedMode&&markerDraftFiles.length){
       const btn=document.getElementById('saveMarker');btn.disabled=true;btn.textContent='ЗАГРУЗКА…';
-      parent.postMessage({kind:'scumMapCreatePost',marker:item.name,markerId:item.id,comment:item.note,files:[...markerDraftFiles]},'https://k1t0q.github.io');
+      sendHubMessage({kind:'scumMapCreatePost',marker:item.name,markerId:item.id,comment:item.note,files:[...markerDraftFiles]});
     }else closeMarkerPopup();
     renderMarkers(mapRect());
     schedule();
