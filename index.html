@@ -521,18 +521,12 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     menuBtn.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');
 
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      if(mobile){
-        cx=keepX; cy=keepY; zoom=keepZoom;
-        clampCenter();
-        syncTargets();
-        renderTiles();
-      }else if(open){
-        const home=document.getElementById('home');
-        if(home) home.click();
-      }else{
-        clampCenter();
-        renderTiles();
-      }
+      // Opening or closing the drawer must never reset the map camera.
+      cx=keepX; cy=keepY; zoom=keepZoom;
+      clampCenter();
+      syncTargets();
+      renderTiles();
+      schedule();
     }));
   }
   menuBtn.addEventListener('click',()=>setDrawer(!drawer.classList.contains('open')));
