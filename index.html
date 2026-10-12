@@ -936,12 +936,13 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   const hubSharedMode=document.documentElement.classList.contains('hub-embed');
   let sharedMarkers=[],sharedReady=false;
   function getMarkers(){
-    if(hubSharedMode) return sharedMarkers;
+    if(hubSharedMode) return sharedMarkers.length||sharedReady?sharedMarkers:readLocalBackup();
     try{return JSON.parse(localStorage.getItem(markerStoreKey())||'[]')}
     catch(e){return []}
   }
+  function readLocalBackup(){try{return JSON.parse(localStorage.getItem('scumHubSharedMapBackup')||'[]')}catch{return []}}
   function setMarkers(arr){
-    if(hubSharedMode){sharedMarkers=arr;return}
+    if(hubSharedMode){sharedMarkers=arr;localStorage.setItem('scumHubSharedMapBackup',JSON.stringify(arr));return}
     localStorage.setItem(markerStoreKey(),JSON.stringify(arr));
   }
   function notifyHub(action,marker,id){
@@ -951,6 +952,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     if(!hubSharedMode||e.origin!=='https://k1t0q.github.io'||e.data?.kind!=='scumMapSharedMarkers')return;
     if(!Array.isArray(e.data.markers))return;
     sharedMarkers=e.data.markers.map(m=>({...m,showLabel:m.show_label,locked:m.locked}));
+    if(sharedMarkers.length)localStorage.setItem('scumHubSharedMapBackup',JSON.stringify(sharedMarkers));
     sharedReady=true;
     renderObjectList();renderMarkers(mapRect());schedule();
   });
@@ -964,6 +966,8 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
           }
         }
       }catch(e){}
+      local.push(...readLocalBackup());
+      local=[...new Map(local.filter(m=>m?.id).map(m=>[m.id,m])).values()];
       parent.postMessage({kind:'scumMapReady',localMarkers:local},'https://k1t0q.github.io');
     },350);
   }
