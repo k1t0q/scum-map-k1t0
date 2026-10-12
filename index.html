@@ -485,7 +485,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     </div>
   </section>
 </aside>
-<div id="markerViewer" class="marker-popup hidden" style="max-height:calc(100dvh - 24px);overflow:auto;left:50%;top:50%;transform:translate(-50%,-50%);width:min(310px,calc(100vw - 28px))">
+<div id="markerViewer" class="marker-popup hidden" style="max-height:calc(100dvh - 24px);overflow:auto;transform:none;width:min(310px,calc(100vw - 28px))">
  <h3 id="markerViewerTitle"></h3>
  <div id="markerViewerType" style="font-size:12px;color:#b8c9d0;margin-bottom:12px"></div>
  <div style="font-size:11px;color:#91a1ab;margin-bottom:5px">КОММЕНТАРИЙ</div>
@@ -1005,9 +1005,15 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     document.getElementById('markerViewerEdit').onclick=()=>{viewer.classList.add('hidden');openMarkerPopup(m.x,m.y,m)};
     document.getElementById('markerViewerClose').onclick=()=>viewer.classList.add('hidden');
     viewer.classList.remove('hidden');
-    // Keep the details card centered, including edit button, at every zoom level.
-    viewer.style.left='50%';
-    viewer.style.top='50%';
+    // Anchor the details next to its map marker while keeping all buttons visible.
+    const rect=mapRect(), sr=stage.getBoundingClientRect();
+    const px=sr.left+rect.left+m.x*rect.size;
+    const py=sr.top+rect.top+m.y*rect.size;
+    const vw=viewer.offsetWidth, vh=viewer.offsetHeight, margin=10, gap=14;
+    const left=px+gap+vw+margin<=window.innerWidth ? px+gap : px-vw-gap;
+    const top=py-vh/2;
+    viewer.style.left=Math.max(margin,Math.min(window.innerWidth-vw-margin,left))+'px';
+    viewer.style.top=Math.max(margin,Math.min(window.innerHeight-vh-margin,top))+'px';
   }
 
   const objectIcon=document.getElementById('objectIcon'),objectColor=document.getElementById('objectColor'),objectSize=document.getElementById('objectSize'),objectSizeVal=document.getElementById('objectSizeVal'),objectShowLabel=document.getElementById('objectShowLabel'),objectLocked=document.getElementById('objectLocked');
