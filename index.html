@@ -535,7 +535,13 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
 .object-list{max-height:220px;overflow:auto}.object-list button{display:block;text-align:left;width:100%;background:#12201b;color:#dcebe2;border:1px solid #284037;border-radius:6px;margin-bottom:5px;padding:8px;cursor:pointer;overflow-wrap:anywhere}
 .map-marker.object-text .marker-label{font-size:inherit}.map-marker.object-text .marker-icon{display:none!important}
 .map-marker.object-text .marker-label{position:relative!important;background:rgba(0,0,0,.65);padding:4px 6px;color:var(--object-color,#fff)!important;display:block!important}
-</style><script>if(new URLSearchParams(location.search).get('hub')==='1')document.documentElement.classList.add('hub-embed');</script></head>
+</style><script>if(new URLSearchParams(location.search).get('hub')==='1')document.documentElement.classList.add('hub-embed');</script><style>
+/* Keep map viewport fixed even in embedded desktop mode (override late rules). */
+html.hub-embed #stage,
+html.hub-embed #stage.drawer-open,
+#stage.drawer-open{left:0!important;right:0!important;width:100%!important;transition:none!important}
+</style>
+</head>
 <body>
 <div class="control-rail"></div>
 
