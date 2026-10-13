@@ -683,7 +683,7 @@ html.hub-embed #stage.drawer-open,
     const keepX=cx, keepY=cy, keepZoom=zoom;
 
     drawer.classList.toggle('open',open);
-    stage.classList.toggle('drawer-open',open);
+    // Drawer overlays the map; never toggle layout-changing classes on stage.
     menuBtn.textContent=open?'×':'☰';
     menuBtn.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');
 
