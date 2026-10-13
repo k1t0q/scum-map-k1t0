@@ -418,6 +418,19 @@
     #fallbackImg{transform:none!important;will-change:auto!important}
   }
 
+
+/* FURYHUB 3: compact floating map controls; retain drawer behavior. */
+.control-rail{display:none!important}
+#stage{left:0!important}
+#stage.drawer-open{left:330px!important}
+.menu-btn{left:12px!important;top:12px!important;background:rgba(8,12,15,.93)!important}
+.zoom{left:12px!important;top:68px!important;transform:none!important;gap:7px!important}
+.drawer{left:0!important}
+@media(max-width:768px){
+ #stage.drawer-open{left:min(92vw,296px)!important}
+ .zoom{left:10px!important;top:68px!important}
+ .menu-btn{left:10px!important}
+}
 </style>
 <style>
 html.hub-embed .drawer-title{display:block!important}
