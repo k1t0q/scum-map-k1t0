@@ -437,6 +437,12 @@
 /* Leave breathing room for the top-left sector name on the map. */
 .zoom{top:110px!important}
 @media(max-width:768px){.zoom{top:110px!important}}
+
+/* FURYHUB 3: restore original control spacing and separate drawer close from title. */
+.zoom{top:78px!important;gap:7px!important}
+@media(max-width:768px){.zoom{top:78px!important;gap:7px!important}}
+.drawer.open{padding-top:78px!important}
+.drawer.open .drawer-title{position:absolute!important;top:26px!important;left:76px!important;margin:0!important;white-space:nowrap!important}
 </style>
 <style>
 html.hub-embed .drawer-title{display:block!important}
