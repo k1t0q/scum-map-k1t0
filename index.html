@@ -1165,12 +1165,12 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
   }
 
   let focusedMarkerId=null,focusUntil=0;
-  let stashLayerVisible=true;
+  let stashLayerVisible=localStorage.getItem('scumMapStashesVisible')!=='false';
   let stashPickPostId=null;
   const stashToggle=document.createElement('button');
-  stashToggle.type='button';stashToggle.textContent='📦 Схроны: ВКЛ';stashToggle.style.cssText='width:100%;padding:9px;margin:8px 0;background:#13251c;color:#c6f4d5;border:1px solid #315b43;border-radius:6px;cursor:pointer';
+  stashToggle.type='button';stashToggle.textContent='📦 Схроны: '+(stashLayerVisible?'ВКЛ':'ВЫКЛ');stashToggle.style.cssText='width:100%;padding:9px;margin:8px 0;background:#13251c;color:#c6f4d5;border:1px solid #315b43;border-radius:6px;cursor:pointer';
   document.querySelector('.object-list-wrap')?.prepend(stashToggle);
-  stashToggle.onclick=()=>{stashLayerVisible=!stashLayerVisible;stashToggle.textContent='📦 Схроны: '+(stashLayerVisible?'ВКЛ':'ВЫКЛ');renderMarkers(mapRect())};
+  stashToggle.onclick=()=>{stashLayerVisible=!stashLayerVisible;localStorage.setItem('scumMapStashesVisible',String(stashLayerVisible));stashToggle.textContent='📦 Схроны: '+(stashLayerVisible?'ВКЛ':'ВЫКЛ');renderMarkers(mapRect())};
   function focusStash(m){stopInertia();targetCx=m.x;targetCy=m.y;targetZoom=4.4;clampTarget();requestCamera();focusMapMarker(m)}
   function showLinkedStashDetails(m){
     focusMapMarker(m);
