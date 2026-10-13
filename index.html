@@ -443,6 +443,11 @@
 @media(max-width:768px){.zoom{top:78px!important;gap:7px!important}}
 .drawer.open{padding-top:78px!important}
 .drawer.open .drawer-title{position:absolute!important;top:26px!important;left:76px!important;margin:0!important;white-space:nowrap!important}
+
+/* FURYHUB 3: drawer overlays the map instead of changing its viewport. */
+#stage,#stage.drawer-open,html.hub-embed #stage.drawer-open{left:0!important;right:0!important;transition:none!important}
+.drawer{z-index:27001!important}
+.menu-btn{z-index:28001!important}
 </style>
 <style>
 html.hub-embed .drawer-title{display:block!important}
@@ -676,16 +681,8 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     menuBtn.textContent=open?'×':'☰';
     menuBtn.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');
 
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      // Opening or closing the drawer must never reset the map camera.
-      cx=keepX; cy=keepY; zoom=keepZoom;
-      clampCenter();
-      syncTargets();
-      renderTiles();
-      schedule();
-      // Recalculate once the layout has settled after the panel width changes.
-      requestAnimationFrame(()=>{clampCenter();syncTargets();renderTiles();schedule();});
-    }));
+    // The drawer is an overlay: keep camera and tiles untouched to avoid jumps.
+    // Existing map render loop continues normally while the panel is open.
   }
   menuBtn.addEventListener('click',()=>setDrawer(!drawer.classList.contains('open')));
   document.querySelectorAll('.drawer-head').forEach(btn=>{
