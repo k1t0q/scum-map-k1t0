@@ -1135,7 +1135,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     edit.style.cssText='font-size:10px;padding:6px 8px;min-height:30px;line-height:1.1';
     document.getElementById('markerViewerClose').style.cssText='font-size:10px;padding:6px 8px;min-height:30px;line-height:1.1';
     edit.onclick=()=>{viewer.classList.add('hidden');sendHubMessage({kind:'scumStashOpen',id:String(m.id).slice(11)})};
-    document.getElementById('markerViewerClose').onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null;focusMapMarker(m)};
+    document.getElementById('markerViewerClose').onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null;focusedMarkerId=null;const halo=document.getElementById('mapFocusOverlay');halo.classList.remove('active');halo.style.display='none';renderMarkers(mapRect())};
     activeDetailMarker=m;viewer.classList.remove('hidden');positionMarkerDetails(m);
   }
   function renderMarkers(rect){
@@ -1262,7 +1262,7 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     }
     document.getElementById('markerViewerEdit').textContent='РЕДАКТИРОВАТЬ';
     document.getElementById('markerViewerEdit').onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null;openMarkerPopup(m.x,m.y,m)};
-    document.getElementById('markerViewerClose').onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null;focusMapMarker(m)};
+    document.getElementById('markerViewerClose').onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null;focusedMarkerId=null;const halo=document.getElementById('mapFocusOverlay');halo.classList.remove('active');halo.style.display='none';renderMarkers(mapRect())};
     viewer.classList.remove('hidden');
     activeDetailMarker=m;
     positionMarkerDetails(m);
