@@ -1524,6 +1524,17 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       if(x>=0&&x<=1&&y>=0&&y<=1){sendHubMessage({kind:'scumStashPicked',id:stashPickPostId,x,y});stashPickPostId=null;stage.style.cursor='grab';showToast('Сохраняю точку схрона…',3000)}
       return;
     }
+    // Clicking the searched coordinate pin opens the existing marker editor.
+    if(selectedLocation && !addMarkerMode){
+      const pin=locationMarker.querySelector('.loc-pin');
+      if(pin){
+        const b=pin.getBoundingClientRect();
+        if(e.clientX>=b.left-12&&e.clientX<=b.right+12&&e.clientY>=b.top-12&&e.clientY<=b.bottom+12){
+          const p=worldToNorm(selectedLocation.x,selectedLocation.y);
+          if(p.x>=0&&p.x<=1&&p.y>=0&&p.y<=1){openMarkerPopup(p.x,p.y,null);return;}
+        }
+      }
+    }
     if(!addMarkerMode) return;
     const rect=mapRect();
     const pt=eventToStagePoint(e);
