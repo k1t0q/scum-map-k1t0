@@ -953,6 +953,22 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
     pin.className='loc-pin';
     pin.style.left=(rect.left+n.x*rect.size)+'px';
     pin.style.top=(rect.top+n.y*rect.size)+'px';
+    pin.setAttribute('role','button');
+    pin.setAttribute('tabindex','0');
+    pin.setAttribute('aria-label','Добавить метку в этой точке');
+    pin.title='Добавить метку в этой точке';
+    pin.style.pointerEvents='auto';
+    pin.style.cursor='pointer';
+    const createFromLocation=e=>{
+      e.preventDefault();e.stopPropagation();
+      if(!selectedLocation)return;
+      const point=worldToNorm(selectedLocation.x,selectedLocation.y);
+      if(point.x<0||point.x>1||point.y<0||point.y>1)return;
+      openMarkerPopup(point.x,point.y,null);
+    };
+    pin.addEventListener('pointerdown',e=>e.stopPropagation());
+    pin.addEventListener('click',createFromLocation);
+    pin.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){createFromLocation(e)}});
     locationMarker.appendChild(pin);
   }
   function focusLocation(loc){
