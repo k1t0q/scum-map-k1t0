@@ -431,6 +431,12 @@
  .zoom{left:10px!important;top:68px!important}
  .menu-btn{left:10px!important}
 }
+
+/* FURYHUB 3: controls must not cover the open drawer. */
+.drawer.open ~ .zoom{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+/* Leave breathing room for the top-left sector name on the map. */
+.zoom{top:110px!important}
+@media(max-width:768px){.zoom{top:110px!important}}
 </style>
 <style>
 html.hub-embed .drawer-title{display:block!important}
