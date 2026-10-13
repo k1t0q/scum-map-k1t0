@@ -911,8 +911,24 @@ html.hub-embed .drawer-section:nth-of-type(2) .subgroup:last-of-type .subgroup-h
       s.label.style.display=visible ? 'block' : 'none';
 
       if(visible){
-        const absoluteX=visibleLeft+pad;
-        const absoluteY=visibleTop+pad;
+        let absoluteX=visibleLeft+pad;
+        let absoluteY=visibleTop+pad;
+        // Avoid floating map controls regardless of which sector is under them.
+        const controls=document.querySelector('.zoom');
+        const menu=document.getElementById('menuBtn');
+        const obstacles=[menu,...(drawer.classList.contains('open')?[]:[...controls.querySelectorAll('button')])];
+        const labelWidth=Math.max(55,s.label.offsetWidth||labelPx*2.3);
+        const labelHeight=Math.max(30,s.label.offsetHeight||labelPx*1.15);
+        for(const button of obstacles){
+          const b=button.getBoundingClientRect();
+          const sr=stage.getBoundingClientRect();
+          const bx=b.left-sr.left,by=b.top-sr.top;
+          if(absoluteX<bx+b.width+6 && absoluteX+labelWidth>bx-6 && absoluteY<by+b.height+6 && absoluteY+labelHeight>by-6){
+            const nextX=bx+b.width+12;
+            if(nextX+labelWidth<=visibleRight-pad)absoluteX=Math.max(absoluteX,nextX);
+            else absoluteY=Math.max(absoluteY,by+b.height+12);
+          }
+        }
         s.label.style.left=(absoluteX-left)+'px';
         s.label.style.top=(absoluteY-top)+'px';
       }
