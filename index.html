@@ -1375,11 +1375,37 @@ html.hub-embed #stage.drawer-open,
     if(editingMarkerId){const m=getMarkers().find(x=>x.id===editingMarkerId);if(m)renderHubMarkerPosts(m)}
   });
   let markerDraftFiles=[];
+  function existingMarkerPhotoUrls(m){
+    if(!m)return [];
+    const related=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m.name?.trim().toLocaleLowerCase('ru'));
+    return [...new Set([...(Array.isArray(m.stashImages)?m.stashImages:[]),...related.flatMap(p=>Array.isArray(p.images)?p.images:[])])]
+      .filter(url=>typeof url==='string'&&url.startsWith('https://'));
+  }
+  function renderExistingMarkerPhotos(m){
+    const compose=document.getElementById('hubMarkerCompose');
+    let gallery=document.getElementById('hubExistingPhotos');
+    if(!gallery){
+      gallery=document.createElement('div');
+      gallery.id='hubExistingPhotos';
+      gallery.className='hub-marker-photos';
+      compose.insertBefore(gallery,document.getElementById('hubDraftPhotos'));
+    }
+    gallery.replaceChildren();
+    for(const url of existingMarkerPhotoUrls(m)){
+      const img=document.createElement('img');
+      img.src=url;img.alt='Прикреплённое фото';img.loading='lazy';
+      img.title='Нажмите, чтобы увеличить';img.onclick=()=>openMapPhoto(url);
+      gallery.appendChild(img);
+    }
+    gallery.hidden=!gallery.childElementCount;
+  }
   function addMarkerPhotos(files){
+    const current=getMarkers().find(x=>x.id===editingMarkerId);
+    const existingCount=existingMarkerPhotoUrls(current).length;
     for(const file of files){
       if(!file?.type?.startsWith('image/'))continue;
       if(file.size>10*1024*1024){showToast('Фото больше 10 МБ');continue}
-      if(markerDraftFiles.length>=5){showToast('Максимум 5 фото');break}
+      if(markerDraftFiles.length+existingCount>=5){showToast('Максимум 5 фото на метку');break}
       markerDraftFiles.push(file);
     }
     renderDraftPhotos();
@@ -1413,6 +1439,7 @@ html.hub-embed #stage.drawer-open,
   function renderHubMarkerPosts(m){
     const box=document.getElementById('hubMarkerPosts');
     box.replaceChildren();
+    renderExistingMarkerPhotos(m);
     const posts=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m?.name?.trim().toLocaleLowerCase('ru'));
     box.hidden=!posts.length;
     document.getElementById('hubMarkerCompose').hidden=!hubSharedMode;
