@@ -1450,7 +1450,7 @@ html.hub-embed #stage.drawer-open,
     document.getElementById('markerPopupHint').textContent=existing?'Для удаления метки используй кнопку «УДАЛИТЬ» в редакторе.':'Укажи название, описание и параметры метки.';
     markerType.value=existing?(existing.type==='enemy'?'base':existing.type==='text'?'marker':existing.type):'base';
     markerName.value=existing?existing.name:'';
-    markerNote.value=existing?existing.note:'';
+    markerNote.value=existing&&typeof existing.note==='string'&&!['undefined','null'].includes(existing.note.trim().toLowerCase())?existing.note:'';
     objectIcon.value=existing?.icon||'';objectColor.value=existing?.color||MARKER_META[markerType.value]?.color||'#e25555';objectSize.value=existing?.size||32;objectSizeVal.value=objectSize.value;objectShowLabel.checked=true;objectLocked.checked=false;renderObjectIcons();
     deleteMarkerBtn.style.display=existing?'block':'none';
     markerDraftFiles=[];renderDraftPhotos();
@@ -1517,7 +1517,7 @@ html.hub-embed #stage.drawer-open,
       y:pendingMarkerNorm.y,
       type:markerType.value,
       name:markerName.value.trim(),
-      note:markerNote.value.trim(),
+      note:['undefined','null'].includes(markerNote.value.trim().toLowerCase())?'':markerNote.value.trim(),
       enemyNicks:[...draftEnemyNicks],
       icon:objectIcon.value.trim()||MARKER_META[markerType.value]?.icon||'📍',color:objectColor.value,size:Number(objectSize.value),showLabel:objectShowLabel.checked,locked:objectLocked.checked,
       updatedAt:Date.now()
