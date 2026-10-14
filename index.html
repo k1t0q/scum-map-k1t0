@@ -1136,7 +1136,7 @@ html.hub-embed #stage.drawer-open,
     }
     if(e.data?.kind==='scumStashFocus'){
       const postKind=['stash','base','other'].includes(e.data.postKind)?e.data.postKind:'stash';const m=getMarkers().find(m=>m.id===postKind+'-post-'+e.data.id);
-      if(m){stashLayerVisible=true;stashToggle.textContent='📦 Схроны: ВКЛ';focusStash(m);showLinkedStashDetails(m)}
+      if(m){stashLayerVisible=true;stashToggle.textContent='📦 Схроны: ВКЛ';focusStash(m);if(postKind==='stash')showLinkedStashDetails(m);else showMarkerDetails(m)}
       else{stashPickPostId=String(e.data.id);stashPickKind=postKind;stage.style.cursor='crosshair';showToast('Точка не указана. Выбери место метки на карте',4000)}
     }
   });
