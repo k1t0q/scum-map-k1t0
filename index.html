@@ -1393,7 +1393,7 @@ html.hub-embed #stage.drawer-open,
     gallery.replaceChildren();
     const posts=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m?.name?.trim().toLocaleLowerCase('ru'));
     const entries=[];
-    for(const url of (Array.isArray(m?.stashImages)?m.stashImages:[]))entries.push({url,postId:null});
+    for(const url of (Array.isArray(m?.stashImages)?m.stashImages:[]))entries.push({url,postId:(/^(?:other|stash|base)-post-(\d+)$/.exec(String(m?.id||''))||[])[1]||null});
     for(const p of posts)for(const url of (Array.isArray(p.images)?p.images:[]))entries.push({url,postId:p.id});
     const seen=new Set();
     for(const {url,postId} of entries){
