@@ -1381,24 +1381,51 @@ html.hub-embed #stage.drawer-open,
     return [...new Set([...(Array.isArray(m.stashImages)?m.stashImages:[]),...related.flatMap(p=>Array.isArray(p.images)?p.images:[])])]
       .filter(url=>typeof url==='string'&&url.startsWith('https://'));
   }
+
+  const pendingPhotoDeletions=new Set();
   function renderExistingMarkerPhotos(m){
     const compose=document.getElementById('hubMarkerCompose');
     let gallery=document.getElementById('hubExistingPhotos');
     if(!gallery){
-      gallery=document.createElement('div');
-      gallery.id='hubExistingPhotos';
-      gallery.className='hub-marker-photos';
+      gallery=document.createElement('div');gallery.id='hubExistingPhotos';gallery.className='hub-marker-photos';
       compose.insertBefore(gallery,document.getElementById('hubDraftPhotos'));
     }
     gallery.replaceChildren();
-    for(const url of existingMarkerPhotoUrls(m)){
-      const img=document.createElement('img');
-      img.src=url;img.alt='Прикреплённое фото';img.loading='lazy';
-      img.title='Нажмите, чтобы увеличить';img.onclick=()=>openMapPhoto(url);
-      gallery.appendChild(img);
+    const posts=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m?.name?.trim().toLocaleLowerCase('ru'));
+    const entries=[];
+    for(const url of (Array.isArray(m?.stashImages)?m.stashImages:[]))entries.push({url,postId:null});
+    for(const p of posts)for(const url of (Array.isArray(p.images)?p.images:[]))entries.push({url,postId:p.id});
+    const seen=new Set();
+    for(const {url,postId} of entries){
+      if(typeof url!=='string'||!url.startsWith('https://')||seen.has(url))continue;
+      seen.add(url);
+      const wrap=document.createElement('span');wrap.style.cssText='position:relative;display:inline-flex';
+      const img=document.createElement('img');img.src=url;img.alt='Прикреплённое фото';img.loading='lazy';img.onclick=()=>openMapPhoto(url);wrap.appendChild(img);
+      if(postId!=null&&hubSharedMode){
+        const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.title='Удалить фото';
+        remove.style.cssText='position:absolute;right:0;top:0;background:#a42b2b;color:#fff;border:0;border-radius:4px;cursor:pointer;z-index:2;font-size:17px;min-width:23px;height:23px';
+        const key=String(postId)+':'+url;
+        remove.disabled=pendingPhotoDeletions.has(key);
+        remove.onclick=()=>{
+          if(pendingPhotoDeletions.has(key)||!confirm('Удалить эту фотографию из метки?'))return;
+          pendingPhotoDeletions.add(key);remove.disabled=true;
+          sendHubMessage({kind:'scumMapDeletePostPhoto',postId,url});
+        };
+        wrap.appendChild(remove);
+      }
+      gallery.appendChild(wrap);
     }
     gallery.hidden=!gallery.childElementCount;
   }
+  window.addEventListener('message',e=>{
+    if(!hubSharedMode||!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumMapDeletePostPhotoResult')return;
+    const key=String(e.data.postId)+':'+e.data.url;
+    pendingPhotoDeletions.delete(key);
+    if(!e.data.ok){showToast(e.data.error||'Не удалось удалить фото');const m=getMarkers().find(x=>x.id===editingMarkerId);if(m)renderHubMarkerPosts(m);return}
+    for(const p of hubMarkerPosts)if(String(p.id)===String(e.data.postId))p.images=(p.images||[]).filter(x=>x!==e.data.url);
+    const m=getMarkers().find(x=>x.id===editingMarkerId);if(m)renderHubMarkerPosts(m);
+    showToast('Фотография удалена');
+  });
   function addMarkerPhotos(files){
     const current=getMarkers().find(x=>x.id===editingMarkerId);
     const existingCount=existingMarkerPhotoUrls(current).length;
@@ -1444,18 +1471,14 @@ html.hub-embed #stage.drawer-open,
     box.hidden=!posts.length;
     document.getElementById('hubMarkerCompose').hidden=!hubSharedMode;
     if(!posts.length)return;
-    const title=document.createElement('h4');title.textContent='ФОТО И ПУБЛИКАЦИИ';box.appendChild(title);
+    // Photos are displayed once in the editable gallery.
     for(const p of posts){
+      if(!p.comment)continue;
       const card=document.createElement('div');card.className='hub-marker-post';
-      const info=document.createElement('small');info.textContent=(p.author||'Участник')+(p.date?' · '+new Date(p.date).toLocaleDateString('ru-RU'):'');card.appendChild(info);
-      if(p.comment){const desc=document.createElement('p');desc.textContent=p.comment;card.appendChild(desc)}
-      const photos=document.createElement('div');photos.className='hub-marker-photos';
-      for(const url of (p.images||[])){
-        if(typeof url!=='string'||!url.startsWith('https://'))continue;
-        const img=document.createElement('img');img.src=url;img.alt='Фото базы';img.loading='lazy';img.onclick=()=>openMapPhoto(url);photos.appendChild(img);
-      }
-      card.appendChild(photos);box.appendChild(card);
+      const info=document.createElement('small');info.textContent=(p.author||'Участник')+(p.date?' · '+new Date(p.date).toLocaleDateString('ru-RU'):'');
+      const desc=document.createElement('p');desc.textContent=p.comment;card.append(info,desc);box.appendChild(card);
     }
+    box.hidden=!box.childElementCount;
   }
   const editTab=document.getElementById('markerEditTab'),rosterTab=document.getElementById('markerRosterTab');
   function switchMarkerTab(roster){
