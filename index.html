@@ -1316,7 +1316,8 @@ html.hub-embed #stage.drawer-open,
     note.style.color=cleanNote?'#e4ecef':'#85939c';
     const gallery=document.getElementById('markerViewerPhotos');gallery.replaceChildren();
     const related=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m.name?.trim().toLocaleLowerCase('ru'));
-    for(const p of related)for(const url of (p.images||[])){
+    const photoUrls=[...(Array.isArray(m.stashImages)?m.stashImages:[]),...related.flatMap(p=>Array.isArray(p.images)?p.images:[])];
+    for(const url of [...new Set(photoUrls)]){
       if(typeof url!=='string'||!url.startsWith('https://'))continue;
       const img=document.createElement('img');img.src=url;img.loading='lazy';img.alt='Фото '+m.name;
       img.onclick=()=>openMapPhoto(url);gallery.appendChild(img);
