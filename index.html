@@ -1132,12 +1132,12 @@ html.hub-embed #stage.drawer-open,
   window.addEventListener('message',e=>{
     if(!hubSharedMode||e.source!==parent||!allowedHubOrigins.has(e.origin))return;
     if(e.data?.kind==='scumStashPick'){
-      stashPickPostId=String(e.data.id);addMarkerMode=false;setDrawer(false);stage.style.cursor='crosshair';showToast('Нажми на карту для размещения схрона',4000);
+      stashPickPostId=String(e.data.id);stashPickKind=['stash','base','other'].includes(e.data.postKind)?e.data.postKind:'stash';addMarkerMode=false;setDrawer(false);stage.style.cursor='crosshair';showToast('Нажми на карту для размещения метки',4000);
     }
     if(e.data?.kind==='scumStashFocus'){
-      const m=getMarkers().find(m=>m.id==='stash-post-'+e.data.id);
+      const postKind=['stash','base','other'].includes(e.data.postKind)?e.data.postKind:'stash';const m=getMarkers().find(m=>m.id===postKind+'-post-'+e.data.id);
       if(m){stashLayerVisible=true;stashToggle.textContent='📦 Схроны: ВКЛ';focusStash(m);showLinkedStashDetails(m)}
-      else{stashPickPostId=String(e.data.id);stage.style.cursor='crosshair';showToast('Точка не указана. Выбери место схрона на карте',4000)}
+      else{stashPickPostId=String(e.data.id);stashPickKind=postKind;stage.style.cursor='crosshair';showToast('Точка не указана. Выбери место метки на карте',4000)}
     }
   });
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
@@ -1172,7 +1172,7 @@ html.hub-embed #stage.drawer-open,
 
   let focusedMarkerId=null,focusUntil=0;
   let stashLayerVisible=localStorage.getItem('scumMapStashesVisible')!=='false';
-  let stashPickPostId=null;
+  let stashPickPostId=null,stashPickKind='stash';
   const stashToggle=document.createElement('button');
   stashToggle.type='button';stashToggle.textContent='📦 Схроны: '+(stashLayerVisible?'ВКЛ':'ВЫКЛ');stashToggle.style.cssText='width:100%;padding:9px;margin:8px 0;background:#13251c;color:#c6f4d5;border:1px solid #315b43;border-radius:6px;cursor:pointer';
   document.querySelector('.object-list-wrap')?.prepend(stashToggle);
@@ -1617,7 +1617,7 @@ html.hub-embed #stage.drawer-open,
     if(stashPickPostId){
       const rect=mapRect(),pt=eventToStagePoint(e);
       const x=(pt.x-rect.left)/rect.size,y=(pt.y-rect.top)/rect.size;
-      if(x>=0&&x<=1&&y>=0&&y<=1){sendHubMessage({kind:'scumStashPicked',id:stashPickPostId,x,y});stashPickPostId=null;stage.style.cursor='grab';showToast('Сохраняю точку схрона…',3000)}
+      if(x>=0&&x<=1&&y>=0&&y<=1){sendHubMessage({kind:'scumStashPicked',id:stashPickPostId,postKind:stashPickKind,x,y});stashPickPostId=null;stage.style.cursor='grab';showToast('Сохраняю точку схрона…',3000)}
       return;
     }
     // Clicking the searched coordinate pin opens the existing marker editor.
