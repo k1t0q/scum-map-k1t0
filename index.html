@@ -1311,8 +1311,9 @@ html.hub-embed #stage.drawer-open,
     const meta=MARKER_META[m.type]||MARKER_META.temp;
     document.getElementById('markerViewerType').textContent=(m.icon||meta.icon||'')+' '+({base:'Вражеская база',stash:'Схрон',enemy:'Вражеская база',vehicle:'Транспорт',marker:'Маркер',text:'Текст'}[m.type]||'Объект');
     const note=document.getElementById('markerViewerNote');
-    note.textContent=m.note?.trim()||'Комментарий не добавлен';
-    note.style.color=m.note?.trim()?'#e4ecef':'#85939c';
+    const cleanNote=typeof m.note==='string'&&!['undefined','null'].includes(m.note.trim().toLowerCase())?m.note.trim():'';
+    note.textContent=cleanNote||'Комментарий не добавлен';
+    note.style.color=cleanNote?'#e4ecef':'#85939c';
     const gallery=document.getElementById('markerViewerPhotos');gallery.replaceChildren();
     const related=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m.name?.trim().toLocaleLowerCase('ru'));
     for(const p of related)for(const url of (p.images||[])){
@@ -1332,7 +1333,7 @@ html.hub-embed #stage.drawer-open,
   const OBJECT_ICONS=['📍','🏠','🏪','⛽','🚗','🔫','💊','🍖','💧','⚠️','☠️','⭐','🏁','🎯','📦','🛡️','✈️','⚓'];
   function renderObjectIcons(){
     const grid=document.getElementById('objectIconGrid');grid.replaceChildren();
-    for(const icon of OBJECT_ICONS){const b=document.createElement('button');b.type='button';b.textContent=icon;b.classList.toggle('active',objectIcon.value===icon);b.onclick=()=>{objectIcon.value=icon;renderObjectIcons()};grid.appendChild(b)}
+    for(const icon of OBJECT_ICONS){const b=document.createElement('button');b.type='button';b.textContent=icon;b.classList.toggle('active',objectIcon.value===icon);const chooseIcon=e=>{e.preventDefault();e.stopPropagation();objectIcon.value=icon;renderObjectIcons()};b.addEventListener('click',chooseIcon);b.addEventListener('touchend',chooseIcon,{passive:false});grid.appendChild(b)}
   }
   objectIcon.addEventListener('input',renderObjectIcons);
   objectSize.addEventListener('input',()=>objectSizeVal.value=objectSize.value);
