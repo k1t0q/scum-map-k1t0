@@ -1090,7 +1090,7 @@ html.hub-embed #stage.drawer-open,
   let hubParentOrigin=null;
   function sendHubMessage(msg){if(hubSharedMode&&hubParentOrigin)parent.postMessage(msg,hubParentOrigin)}
   function getMarkers(){
-    if(hubSharedMode) return sharedMarkers.length||sharedReady?sharedMarkers:readLocalBackup();
+    if(hubSharedMode) return sharedMarkers;
     try{return JSON.parse(localStorage.getItem(markerStoreKey())||'[]')}
     catch(e){return []}
   }
@@ -1106,23 +1106,14 @@ html.hub-embed #stage.drawer-open,
     if(!hubSharedMode||!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumMapSharedMarkers')return;
     if(!Array.isArray(e.data.markers))return;
     const fromServer=e.data.markers.map(m=>({...m,showLabel:m.show_label,locked:m.locked}));
-    sharedMarkers=fromServer.length?fromServer:readLocalBackup();
-    if(fromServer.length)localStorage.setItem('scumHubSharedMapBackup',JSON.stringify(fromServer));
+    sharedMarkers=fromServer;
+    localStorage.setItem('scumHubSharedMapBackup',JSON.stringify(fromServer));
     sharedReady=true;
     renderObjectList();renderMarkers(mapRect());schedule();
   });
   function sendMapReady(){
-      let local=[];try{
-        for(const key of Object.keys(localStorage)){
-          if(key.startsWith('scumMapMarkersProfile_')){
-            const v=JSON.parse(localStorage.getItem(key)||'[]');
-            if(Array.isArray(v))local.push(...v);
-          }
-        }
-      }catch(e){}
-      local.push(...readLocalBackup());
-      local=[...new Map(local.filter(m=>m?.id).map(m=>[m.id,m])).values()];
-      sendHubMessage({kind:'scumMapReady',localMarkers:local});
+    // Server is the only authority in shared mode. Never reimport browser cache.
+    sendHubMessage({kind:'scumMapReady',localMarkers:[]});
   }
   window.addEventListener('message',e=>{
     if(!hubSharedMode||e.source!==parent||!allowedHubOrigins.has(e.origin)||e.data?.kind!=='scumMapParentHello')return;
