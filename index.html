@@ -1182,10 +1182,10 @@ html.hub-embed #stage.drawer-open,
       const photo=document.createElement('img');photo.src=url;photo.loading='lazy';photo.alt='Фото схрона';
       photo.onclick=()=>openMapPhoto(url);gallery.appendChild(photo);
     }
-    const edit=document.getElementById('markerViewerEdit');edit.textContent='ПЕРЕЙТИ К СХРОНУ';
+    const edit=document.getElementById('markerViewerEdit');edit.textContent='РЕДАКТИРОВАТЬ';
     edit.style.cssText='font-size:10px;padding:6px 8px;min-height:30px;line-height:1.1';
     document.getElementById('markerViewerClose').style.cssText='font-size:10px;padding:6px 8px;min-height:30px;line-height:1.1';
-    edit.onclick=()=>{viewer.classList.add('hidden');sendHubMessage({kind:'scumStashOpen',id:String(m.id).slice(11)})};
+    edit.onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null;openMarkerPopup(m.x,m.y,m)};
     document.getElementById('markerViewerClose').onclick=()=>{viewer.classList.add('hidden');activeDetailMarker=null;focusedMarkerId=null;const halo=document.getElementById('mapFocusOverlay');halo.classList.remove('active');halo.style.display='none';renderMarkers(mapRect())};
     activeDetailMarker=m;viewer.classList.remove('hidden');positionMarkerDetails(m);
   }
@@ -1331,7 +1331,7 @@ html.hub-embed #stage.drawer-open,
   objectSize.addEventListener('input',()=>objectSizeVal.value=objectSize.value);
   markerType.addEventListener('change',()=>{objectIcon.value=MARKER_META[markerType.value]?.icon||'📍';objectColor.value=MARKER_META[markerType.value]?.color||'#ffffff';renderObjectIcons()});
   function renderObjectList(){
-    const all=getMarkers().filter(m=>!String(m.id).startsWith('stash-post-')),box=document.getElementById('objectList'),q=document.getElementById('objectSearch').value.trim().toLocaleLowerCase('ru');
+    const all=getMarkers(),box=document.getElementById('objectList'),q=document.getElementById('objectSearch').value.trim().toLocaleLowerCase('ru');
     document.getElementById('objectCount').textContent=all.length;
     box.replaceChildren();
     let matches=0;
@@ -1553,7 +1553,9 @@ html.hub-embed #stage.drawer-open,
       const conflict=nickSquadConflict(nick);
       if(conflict){showToast('Игрок '+nick+' уже находится в отряде «'+(conflict.name||'Без названия')+'»',4000);return}
     }
+    const previous=editingMarkerId?arr.find(x=>x.id===editingMarkerId):null;
     const item={
+      ...(previous||{}),
       id:editingMarkerId||uid(),
       x:pendingMarkerNorm.x,
       y:pendingMarkerNorm.y,
