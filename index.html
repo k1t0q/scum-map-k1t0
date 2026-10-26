@@ -1303,7 +1303,7 @@ html.hub-embed #stage.drawer-open,
     document.getElementById('markerViewerType').textContent=(m.icon||meta.icon||'')+' '+({base:'Вражеская база',stash:'Схрон',enemy:'Вражеская база',vehicle:'Транспорт',marker:'Маркер',text:'Текст'}[m.type]||'Объект');
     const note=document.getElementById('markerViewerNote');
     const cleanNote=typeof m.note==='string'&&!['undefined','null'].includes(m.note.trim().toLowerCase())?m.note.trim():'';
-    note.textContent=cleanNote||'Комментарий не добавлен';
+    note.textContent=(m.type==='stash'&&m.stashDays!=null?('До истечения: '+m.stashDays+' дн.\n'+(m.stashCheckedBy&&m.stashCheckedBy!=='Не проверялся'?'Проверил: '+m.stashCheckedBy+'\n':'')+'\n'):'')+(cleanNote||'Комментарий не добавлен');
     note.style.color=cleanNote?'#e4ecef':'#85939c';
     const gallery=document.getElementById('markerViewerPhotos');gallery.replaceChildren();
     const related=hubMarkerPosts.filter(p=>p.marker?.trim().toLocaleLowerCase('ru')===m.name?.trim().toLocaleLowerCase('ru'));
