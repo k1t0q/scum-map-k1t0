@@ -1988,7 +1988,7 @@ html.hub-embed #stage.drawer-open,
     const yDiff=targetCy-cy;
 
     // Fast but smooth response. Slightly stronger on desktop, buttery on touch.
-    const ease=gestureMode==='pinch' ? 0.42 : 0.34;
+    const ease=gestureMode==='pan' ? 0.92 : gestureMode==='pinch' ? 0.86 : 0.58;
 
     zoom += zoomDiff*ease;
     cx += xDiff*ease;
@@ -2037,8 +2037,8 @@ html.hub-embed #stage.drawer-open,
       requestCamera();
 
       // Natural glide with quick enough stopping for precise map work.
-      velocityX *= Math.pow(0.88,dt);
-      velocityY *= Math.pow(0.88,dt);
+      velocityX *= Math.pow(0.82,dt);
+      velocityY *= Math.pow(0.82,dt);
 
       if(Math.hypot(velocityX,velocityY)>0.000012){
         inertiaRAF=requestAnimationFrame(tick);
@@ -2237,7 +2237,7 @@ html.hub-embed #stage.drawer-open,
     const nx=(sx-rect.left)/rect.size;
     const ny=(sy-rect.top)/rect.size;
 
-    const factor=e.deltaY<0 ? 1.16 : 1/1.16;
+    const factor=Math.exp(-Math.max(-120,Math.min(120,e.deltaY))*0.0024);
     targetZoom=Math.max(1,Math.min(MAX_ZOOM,targetZoom*factor));
 
     const newSize=fitSize()*targetZoom;
