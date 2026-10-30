@@ -1086,7 +1086,7 @@ html.hub-embed #stage.drawer-open,
   function markerStoreKey(){return 'scumMapMarkersProfile_'+safeProfileKey(currentProfile)}
   const hubSharedMode=document.documentElement.classList.contains('hub-embed');
   let sharedMarkers=[],sharedReady=false;
-  const allowedHubOrigins=new Set(['https://k1t0q.github.io','https://scumhub.layero.app','https://scum-squad-hub.layero.app','https://scum-hub.ru','https://www.scum-hub.ru']);
+  const allowedHubOrigins=new Set(['https://k1t0q.github.io','https://scumhub.layero.app','https://scum-squad-hub.layero.app','https://scum-hub.ru','https://www.scum-hub.ru','https://scum-hub-migration.nikitinrf.workers.dev']);
   let hubParentOrigin=null;
   function sendHubMessage(msg){if(hubSharedMode&&hubParentOrigin)parent.postMessage(msg,hubParentOrigin)}
   function getMarkers(){
